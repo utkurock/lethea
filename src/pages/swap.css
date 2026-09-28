@@ -1,0 +1,504 @@
+/* Jeko cuts copied from lperp: digits share one advance width so live prices don't jitter. */
+@font-face {
+  font-family: 'Jeko';
+  src: url('/fonts/jeko-400.woff2') format('woff2');
+  font-weight: 400; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'Jeko';
+  src: url('/fonts/jeko-500.woff2') format('woff2');
+  font-weight: 500; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'Jeko';
+  src: url('/fonts/jeko-600.woff2') format('woff2');
+  font-weight: 600; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'Jeko';
+  src: url('/fonts/jeko-700.woff2') format('woff2');
+  font-weight: 700; font-style: normal; font-display: swap;
+}
+
+/* Layout borrows titan.exchange's flat structure; colour (silver on graphite), type and brand are Lethea's own. No shadows. */
+:root {
+  --bg: #0c0c0e;
+  --surface: #16171a;
+  --surface-2: #1e1f23;
+  --surface-3: #2a2b30;
+  --line: rgba(255, 255, 255, 0.07);
+  --ink: #f5f5f6;
+  --ink-2: #cfd1d6;
+  --ink-3: #9ea1a8;
+  --ink-4: #6f727a;
+  --accent: #c9ced6;
+  --accent-2: rgba(201, 206, 214, 0.12);
+  /* Silver is light, so text on an accent fill is near black. */
+  --on-accent: #0c0c0e;
+  --evm: #627eea;
+  --xlm: #fdda24;
+  --up: #22c55e;
+  --down: #ef4444;
+  --font: 'Jeko', system-ui, sans-serif;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 400 14px/1.4 var(--font);
+  -webkit-font-smoothing: antialiased;
+}
+
+button { font: inherit; color: inherit; }
+a { color: inherit; text-decoration: none; }
+
+.app {
+  /* One screen: every vertical gap below scales with viewport height. */
+  min-height: 100svh; display: flex; flex-direction: column;
+  position: relative; isolation: isolate; background: var(--bg);
+}
+/* Ordered-dither tone field drawn behind everything (DitherField). */
+.dither { position: fixed; inset: 0; z-index: -1; width: 100vw; height: 100vh; pointer-events: none; }
+
+/* The mascot's speech bubble, placed by DitherField next to the ghost. */
+.psst {
+  position: fixed; z-index: -1; transform: translateY(-100%); pointer-events: none;
+  padding: 6px 12px; border-radius: 14px 14px 14px 4px; border: 1px solid var(--line);
+  background: var(--surface); color: var(--ink-2); font-size: 13px; white-space: nowrap;
+  animation: psst 4.6s ease-in-out both; /* one stop; DitherField sets the duration per flight */
+}
+@keyframes psst { 0%, 10% { opacity: 0; } 22%, 78% { opacity: 1; } 92%, 100% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .psst { animation: none; } }
+
+/* Header */
+.nav { display: flex; align-items: center; gap: 48px; height: clamp(56px, 9vh, 88px); padding: 0 40px; flex: none; }
+.logo { display: inline-flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; letter-spacing: 0.01em; }
+.mark { width: 20px; height: 23px; flex: none; margin-top: -2px; }
+.links { display: flex; align-items: center; gap: 32px; font-size: 15px; font-weight: 500; }
+.links a, .link-off { color: var(--ink-2); transition: color 0.15s; }
+.links a:hover, .links a.active { color: var(--ink); }
+.link-off { cursor: default; }
+.badge {
+  font-style: normal; font-size: 10px; font-weight: 500; color: var(--accent);
+  background: var(--accent-2); border-radius: 6px; padding: 2px 6px; margin-left: 6px; vertical-align: 2px;
+}
+
+.nav-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+
+.key-warn {
+  padding: 4px 10px; border-radius: 999px; cursor: help;
+  background: var(--accent-2); color: var(--accent); font-size: 12px; font-weight: 500;
+}
+
+.wallet-btn {
+  display: inline-flex; align-items: center; gap: 12px; height: 40px; padding: 0 18px;
+  border: 0; border-radius: 999px; background: var(--surface-3); color: var(--ink-3);
+  font-size: 15px; font-weight: 500; cursor: pointer; transition: color 0.15s, background 0.15s; white-space: nowrap;
+}
+.wallet-btn:hover { color: var(--ink); }
+.wallet-btn.on { color: var(--ink); background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--line); }
+.wallet-chip { display: inline-flex; align-items: center; gap: 6px; font-variant-numeric: tabular-nums; }
+/* Phones show the first chip plus a count; desktop shows every chip. */
+.wallet-more { display: none; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+
+/* Phone menu: a flat list under the header, only below 760px. */
+.burger {
+  display: none; width: 36px; height: 36px; flex: none; border: 0; border-radius: 999px;
+  background: var(--surface-3); cursor: pointer; place-content: center; gap: 5px;
+}
+.burger span { display: block; width: 14px; height: 1.5px; border-radius: 1px; background: var(--ink-2); transition: transform 0.2s; }
+.burger.on span:first-child { transform: translateY(3.25px) rotate(45deg); }
+.burger.on span:last-child { transform: translateY(-3.25px) rotate(-45deg); }
+.menu-scrim { position: fixed; inset: 64px 0 0; z-index: 40; background: rgba(0, 0, 0, 0.5); }
+.menu { display: grid; padding: 4px 16px 16px; background: var(--bg); border-bottom: 1px solid var(--line); }
+.menu a, .menu .link-off { padding: 14px 0; font-size: 17px; font-weight: 500; color: var(--ink-2); }
+.menu > * + a, .menu > * + .link-off { border-top: 1px solid var(--line); }
+.menu a.active { color: var(--ink); }
+.menu-note { margin: 8px 0 0; color: var(--accent); font-size: 12px; }
+@media (min-width: 761px) { .menu-scrim { display: none; } }
+
+/* Price strip */
+.ticker {
+  height: 40px; margin: 0 40px; overflow: hidden; flex: none;
+  mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent);
+}
+.ticker-track { display: flex; width: max-content; animation: ticker 70s linear infinite; }
+.ticker:hover .ticker-track { animation-play-state: paused; }
+.ticker-set { display: flex; gap: 32px; padding-right: 32px; }
+.tick {
+  display: inline-flex; align-items: center; gap: 6px; height: 40px; font-size: 13px; white-space: nowrap;
+  border-radius: 999px; transition: color 0.15s;
+}
+.tick:hover b, .tick:focus-visible b { color: var(--accent); }
+.tick:hover .price { color: var(--ink-2); }
+.tick img, .tick .mono { width: 18px; height: 18px; border-radius: 50%; }
+img.plated { background: #fff; padding: 2px; box-sizing: border-box; }
+.tick .mono { display: grid; place-items: center; background: var(--surface-3); font-size: 10px; }
+.tick b { font-weight: 500; }
+.tick .price { color: var(--ink-3); font-variant-numeric: tabular-nums; }
+@keyframes ticker { to { transform: translateX(-50%); } }
+@media (prefers-reduced-motion: reduce) { .ticker-track { animation: none; } }
+
+/* Hero and swap share one block, centred in the space between header and footer. */
+.stage { flex: 1; display: flex; flex-direction: column; justify-content: center; padding-bottom: clamp(0px, 2vh, 32px); }
+
+/* Hero */
+.hero { text-align: center; padding: clamp(12px, 5vh, 56px) 16px 0; flex: none; }
+.hero h1 { width: fit-content; margin: 0 auto 8px; font-size: clamp(26px, min(4vw, 4.6vh), 40px); font-weight: 700; letter-spacing: -0.02em; }
+.hero p { max-width: 34ch; margin: 0 auto; color: var(--ink-3); font-size: 15px; line-height: 1.5; text-wrap: balance; }
+
+/* Swap */
+.swap-layout {
+  display: grid; grid-template-columns: minmax(0, 456px); justify-content: center;
+  padding: clamp(12px, 3vh, 40px) 16px clamp(8px, 2vh, 24px);
+}
+.swap-col { min-width: 0; }
+
+#swap-root { --r-sw-lg: 16px; }
+/* The widget redeclares its font on every .sw node, modals included. */
+:root .sw { --font-family-sw: var(--font); --default-font-family: var(--font); }
+/* The widget writes white on its accent fill; light accents need dark text. */
+#swap-root .bg-sw-accent-500, #swap-root .bg-sw-accent-500 * { color: var(--on-accent); }
+/* The main action button: text only, a size up from the widget's label. */
+#swap-root button.bg-sw-accent-500 svg.reicon { display: none; }
+#swap-root button.bg-sw-accent-500, #swap-root button.bg-sw-accent-500 * { font-size: 17px; font-weight: 500; }
+
+/* Drop the widget's own outer frame so its fields sit on the page, one edge deep. */
+#swap-root .sw > div { background: transparent; padding: 0; }
+/* Same for the loading skeleton's translucent wrapper. */
+#swap-root [class*='bg-sw-gray-900/33'] { background: transparent; padding-inline: 0; padding-bottom: 0; padding-top: 32px; }
+
+/* Opt-in to the widget's deposit-address flow when no wallet for the source chain is connected. */
+.external-switch {
+  display: block; margin: 10px auto 0; padding: 4px 8px; border: 0; background: none; cursor: pointer;
+  color: var(--ink-3); font: inherit; font-size: 13px; text-decoration: underline; text-underline-offset: 3px;
+}
+.external-switch:hover { color: var(--ink); }
+.mode-note { margin: clamp(8px, 1.6vh, 16px) 4px 0; color: var(--ink-4); font-size: 12px; line-height: 1.5; }
+.mode-note b { color: var(--ink-2); font-weight: 500; }
+
+.trust {
+  display: flex; gap: 16px; list-style: none; margin: 0; padding: 0;
+}
+.trust li::before { content: '✓ '; color: var(--accent); }
+
+/* Footer */
+.foot {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px; flex: none;
+  padding: clamp(12px, 2.4vh, 24px) 40px; color: var(--ink-3); font-size: 13px;
+}
+.foot a:hover { color: var(--ink); }
+
+/* Token page: reading column plus a buy rail, the same two-column shape as a stock page. */
+.token-page {
+  flex: 1; display: grid; grid-template-columns: minmax(0, 640px) 420px; justify-content: center; align-content: center;
+  column-gap: clamp(24px, 4vw, 64px); padding: clamp(20px, 4vh, 56px) 24px clamp(10px, 2vh, 32px);
+}
+.back { display: flex; width: fit-content; align-items: center; gap: 6px; color: var(--ink-3); font-size: 13px; }
+.back:hover { color: var(--ink); }
+.token-head { display: flex; align-items: center; gap: 12px; margin: clamp(8px, 1.6vh, 18px) 0 clamp(6px, 1.2vh, 12px); }
+.token-head img, .token-head .mono { width: 44px; height: 44px; border-radius: 50%; }
+.token-head .mono { display: grid; place-items: center; background: var(--surface-3); font-weight: 600; }
+.token-head h1 { margin: 0; font-size: 22px; font-weight: 500; }
+.token-head span { color: var(--ink-3); font-size: 13px; }
+.token-price { font-size: clamp(30px, 5vh, 44px); font-weight: 600; letter-spacing: -0.01em; }
+.token-change { margin: 4px 0 0; font-size: 13px; color: var(--ink-3); }
+.token-change.up { color: var(--up); }
+.token-change.down { color: var(--down); }
+.token-change span { color: var(--ink-3); }
+
+.chart-box { height: clamp(130px, 22vh, 320px); margin-top: clamp(10px, 2vh, 24px); display: grid; }
+.chart-empty { margin: auto; color: var(--ink-4); font-size: 13px; }
+.chart { position: relative; height: 100%; cursor: crosshair; touch-action: pan-y; }
+.chart canvas { display: block; }
+.chart-cross { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--line); pointer-events: none; }
+.chart-dot { position: absolute; width: 8px; height: 8px; margin: -4px 0 0 -4px; border-radius: 50%; pointer-events: none; }
+.chart-tip {
+  position: absolute; top: -4px; transform: translate(-50%, -100%); display: grid; gap: 2px; justify-items: center;
+  padding: 6px 10px; border-radius: 10px; background: var(--surface-3); color: var(--ink-3); font-size: 11px;
+  white-space: nowrap; pointer-events: none;
+}
+.chart-tip b { color: var(--ink); font-size: 13px; font-weight: 500; }
+
+.ranges { display: flex; gap: 4px; margin-top: 8px; }
+.ranges button {
+  height: 30px; padding: 0 12px; border: 0; border-radius: 999px; background: none; cursor: pointer;
+  color: var(--ink-3); font-size: 12px; font-weight: 500;
+}
+.ranges button:hover { color: var(--ink); }
+.ranges button.on { background: var(--surface-3); color: var(--ink); }
+
+.about { margin-top: clamp(10px, 1.6vh, 28px); padding-top: clamp(10px, 1.6vh, 24px); border-top: 1px solid var(--line); }
+.about h2, .token-buy h2 { margin: 0 0 8px; font-size: 16px; font-weight: 500; }
+.about > p { margin: 0; color: var(--ink-3); font-size: 13px; line-height: 1.6; }
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: clamp(10px, 1.6vh, 18px) 0 0; }
+.stats dt { color: var(--ink-4); font-size: 12px; }
+.stats dd { margin: 4px 0 0; font-size: 15px; font-weight: 500; font-variant-numeric: tabular-nums; }
+.about .asset-id { margin: 10px 0 0; color: var(--ink-4); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.asset-id code { font-size: 11px; }
+
+.token-buy { position: sticky; top: 16px; align-self: start; padding-top: 30px; }
+
+@media (max-width: 1100px) {
+  .token-page { grid-template-columns: minmax(0, 640px); row-gap: 32px; }
+  .token-buy { position: static; padding-top: 0; }
+}
+
+/* Short screens: scale the widget instead of letting the page scroll. */
+@media (max-height: 900px) { #swap-root { zoom: 0.92; } }
+@media (max-height: 800px) { #swap-root { zoom: 0.85; } .hero p { font-size: 14px; } }
+@media (max-height: 720px) {
+  #swap-root { zoom: 0.78; }
+  .hero p { display: none; }
+  .stage { padding-bottom: 0; }
+  .chart-box { height: 18vh; }
+}
+@media (max-height: 620px) { #swap-root { zoom: 0.7; } .ticker { display: none; } }
+
+/* Wallet modal */
+.overlay { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; background: rgba(0, 0, 0, 0.6); }
+.modal {
+  width: min(400px, calc(100vw - 32px)); padding: 24px; border-radius: 24px;
+  background: var(--surface); border: 1px solid var(--line);
+}
+.modal h3 { margin: 0; font-size: 16px; font-weight: 500; }
+.modal-sub { margin: 6px 0 16px; color: var(--ink-3); font-size: 13px; }
+/* One block per chain: its logo and state, then a grid of that chain's wallets. */
+.wallet-modal { width: min(480px, calc(100vw - 32px)); max-height: calc(100vh - 48px); overflow-y: auto; }
+.modal-top { display: flex; align-items: center; justify-content: space-between; }
+.modal-x {
+  width: 32px; height: 32px; border: 0; border-radius: 10px; cursor: pointer;
+  background: var(--surface-3); color: var(--ink-2); font-size: 20px; line-height: 1;
+}
+.modal-x:hover { color: var(--ink); }
+.chain-tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; padding: 4px; border-radius: 14px; background: var(--surface-2); }
+.chain-tabs button {
+  display: flex; align-items: center; justify-content: center; gap: 6px; height: 40px; border: 0; border-radius: 10px;
+  background: none; color: var(--ink-3); cursor: pointer; font: inherit; font-size: 13px; font-weight: 500;
+}
+.chain-tabs button:hover { color: var(--ink); }
+.chain-tabs button.on { background: var(--surface-3); color: var(--ink); }
+.tab-on { width: 6px; height: 6px; border-radius: 50%; background: var(--up); }
+.chain-block { padding: 16px 0 4px; }
+.chain-head { display: flex; align-items: center; gap: 12px; }
+.chain-logo { flex: none; border-radius: 50%; }
+.wallet-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 6px; margin-top: 12px; }
+.wallet-tile {
+  display: flex; align-items: center; gap: 10px; min-width: 0; height: 48px; padding: 0 10px;
+  border: 0; border-radius: 12px; background: var(--surface-2); color: var(--ink-2); cursor: pointer;
+  font: inherit; font-size: 13px; font-weight: 500; text-align: left; transition: background 0.15s, color 0.15s;
+}
+.wallet-tile:hover:not(:disabled) { background: var(--surface-3); color: var(--ink); }
+.wallet-tile:disabled { cursor: default; opacity: 0.6; }
+.wallet-tile img, .wallet-tile svg { width: 28px; height: 28px; flex: none; border-radius: 8px; object-fit: contain; }
+.wallet-tile span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wallet-tile.off { color: var(--ink-4); }
+.wallet-tile.off img { opacity: 0.45; filter: grayscale(1); }
+.wallet-tile em { margin-left: auto; color: var(--ink-4); font-size: 11px; font-style: normal; }
+.wallet-empty { margin: 12px 0 0; color: var(--ink-3); font-size: 13px; line-height: 1.5; }
+.wallet-foot { margin: 16px 0 0; padding-top: 14px; border-top: 1px solid var(--line); color: var(--ink-4); font-size: 12px; line-height: 1.5; }
+.wallet-error { margin: 10px 0 0; color: var(--down); font-size: 12px; overflow-wrap: anywhere; }
+.wallet-chip .chain-logo { width: 16px; height: 16px; }
+.wallet-meta { display: grid; gap: 2px; }
+.wallet-meta b { font-weight: 500; }
+.wallet-meta small { color: var(--ink-4); font-size: 12px; }
+.btn {
+  margin-left: auto; height: 32px; padding: 0 14px; border: 0; border-radius: 999px; cursor: pointer;
+  background: var(--accent); color: var(--on-accent); font-size: 13px; font-weight: 500;
+}
+.btn.ghost { background: var(--surface-3); color: var(--ink-2); }
+.btn.ghost:hover { color: var(--ink); }
+
+@media (max-width: 760px) {
+  .nav { gap: 16px; height: 64px; padding: 0 16px; }
+  .links { display: none; }
+  .key-warn { display: none; }
+  .burger { display: grid; }
+  .nav-right { gap: 8px; }
+  .logo { font-size: 17px; }
+  .wallet-btn { height: 36px; padding: 0 14px; font-size: 14px; }
+  .ticker { margin: 0 16px; }
+  .ticker { height: 32px; }
+  .tick { height: 32px; }
+  .hero h1 { font-size: clamp(22px, 7vw, 30px); margin-bottom: 4px; }
+  .hero p { font-size: 13px; }
+  .trust { display: none; }
+  .token-page { padding: 12px 16px 24px; }
+  .stats { grid-template-columns: repeat(2, 1fr); }
+  .foot { padding: clamp(10px, 2vh, 20px) 16px; font-size: 12px; }
+}
+
+/* Private send (Stellar Private Payments, testnet) */
+.private-page {
+  flex: 1; display: grid; grid-template-columns: minmax(0, 456px); justify-content: center; align-content: center;
+  padding: clamp(16px, 4vh, 48px) 16px clamp(8px, 2vh, 24px);
+}
+.private-card { display: grid; gap: 14px; }
+.private-head { display: flex; align-items: center; gap: 10px; }
+.private-head h1 { margin: 0; font-size: clamp(24px, 3.6vh, 32px); font-weight: 700; letter-spacing: -0.02em; }
+.net-badge {
+  padding: 3px 8px; border-radius: 6px; background: var(--accent-2); color: var(--accent);
+  font-size: 12px; font-weight: 500;
+}
+.private-sub { margin: -6px 0 4px; color: var(--ink-3); font-size: 14px; line-height: 1.5; }
+.private-step { display: grid; gap: 14px; }
+.private-step p { margin: 0; color: var(--ink-2); font-size: 14px; line-height: 1.5; }
+.private-step b { font-weight: 500; font-variant-numeric: tabular-nums; }
+
+.cta {
+  height: 52px; border: 0; border-radius: 16px; cursor: pointer;
+  background: var(--accent); color: var(--on-accent); font-size: 16px; font-weight: 500;
+  transition: opacity 0.15s;
+}
+.cta:disabled { cursor: default; background: var(--surface-3); color: var(--ink-3); }
+
+.balances { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.balances div { display: grid; gap: 4px; padding: 14px 16px; border-radius: 16px; background: var(--surface-2); }
+.balances span { color: var(--ink-4); font-size: 12px; }
+.balances b { font-size: 20px; font-weight: 500; font-variant-numeric: tabular-nums; }
+
+.modes { display: flex; gap: 4px; }
+.modes button {
+  height: 34px; padding: 0 14px; border: 0; border-radius: 999px; background: none; cursor: pointer;
+  color: var(--ink-3); font-size: 14px; font-weight: 500;
+}
+.modes button:hover { color: var(--ink); }
+.modes button.on { background: var(--surface-3); color: var(--ink); }
+
+.field { display: grid; gap: 8px; padding: 14px 16px; border-radius: 16px; background: var(--surface-2); }
+.field > span { color: var(--ink-4); font-size: 12px; }
+.field input {
+  width: 100%; min-width: 0; border: 0; outline: 0; background: none; color: var(--ink);
+  font: inherit; font-size: 15px; font-variant-numeric: tabular-nums;
+}
+.field-row { display: flex; align-items: center; gap: 10px; }
+.field-row input { font-size: 26px; font-weight: 500; }
+.field-row em { color: var(--ink-3); font-style: normal; font-size: 15px; }
+.max {
+  height: 26px; padding: 0 10px; border: 0; border-radius: 999px; cursor: pointer;
+  background: var(--surface-3); color: var(--ink-2); font-size: 12px; font-weight: 500;
+}
+
+.leak { margin: 0 4px; color: var(--ink-4); font-size: 12px; line-height: 1.5; }
+.private-warn, .private-error { margin: 0 4px; font-size: 13px; line-height: 1.5; }
+.private-warn { color: var(--xlm); }
+.private-error { color: var(--down); overflow-wrap: anywhere; }
+.private-done { display: grid; gap: 4px; margin: 0 4px; font-size: 13px; }
+.private-done b { color: var(--up); font-weight: 500; }
+.private-done a { color: var(--ink-2); text-decoration: underline; text-underline-offset: 3px; }
+.private-page .mode-note { margin-top: clamp(12px, 2vh, 20px); }
+
+@media (max-width: 760px) {
+  .balances b { font-size: 17px; }
+}
+
+/* Phones: sticky header, bottom-sheet wallet picker, 16px inputs (iOS zooms on focus below that), bigger tap targets. */
+@media (max-width: 760px) {
+  button, a { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+  .nav { position: sticky; top: 0; z-index: 45; background: var(--bg); }
+  body:has(.menu-scrim) { overflow: hidden; }
+
+  .wallet-btn { gap: 8px; }
+  .wallet-btn .wallet-chip ~ .wallet-chip { display: none; }
+  .wallet-more { display: inline; }
+
+  .field input { font-size: 16px; }
+  .field-row input { font-size: 26px; }
+  .sw input[placeholder^='Search'], .sw input[aria-label='Max slippage'] { font-size: 16px; }
+
+  .foot a { padding: 10px 0; }
+  .ranges button { height: 36px; padding: 0 14px; }
+  .back { padding: 8px 0; }
+
+  .overlay { place-items: end center; }
+  .modal, .wallet-modal {
+    width: 100%; max-height: 88svh; border-radius: 24px 24px 0 0; border-width: 1px 0 0;
+    padding: 20px 16px calc(20px + env(safe-area-inset-bottom));
+    animation: sheet-up 0.22s ease-out;
+  }
+  .chain-tabs button { gap: 4px; font-size: 12px; }
+  .wallet-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@keyframes sheet-up { from { transform: translateY(24px); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .modal { animation: none; } }
+
+/* Short phones: tighten the stage so the one-screen layout still fits at 360x640. */
+@media (max-width: 760px) and (max-height: 680px) {
+  .hero { padding-top: 8px; }
+  .swap-layout { padding-top: 8px; }
+  .foot { padding-block: 6px; }
+}
+
+/* Docs: sticky section list plus one reading column. */
+.foot-left { display: inline-flex; align-items: center; gap: 16px; }
+.docs-page {
+  flex: 1; display: grid; grid-template-columns: 200px minmax(0, 680px); justify-content: center;
+  column-gap: clamp(32px, 5vw, 72px); padding: clamp(24px, 5vh, 56px) 24px clamp(48px, 8vh, 96px);
+}
+.docs-toc { position: sticky; top: 24px; align-self: start; display: grid; gap: 2px; }
+.docs-toc span { margin-bottom: 10px; color: var(--ink-4); font-size: 12px; }
+.docs-toc a { padding: 6px 0; color: var(--ink-3); font-size: 14px; transition: color 0.15s; }
+.docs-toc a:hover, .docs-toc a.on { color: var(--ink); }
+
+.docs-head h1 { margin: 0 0 8px; font-size: clamp(28px, 4vw, 40px); font-weight: 700; letter-spacing: -0.02em; }
+.docs-head p { margin: 0; color: var(--ink-3); font-size: 16px; line-height: 1.5; }
+
+.doc-section { scroll-margin-top: 24px; padding-top: 40px; margin-top: 40px; border-top: 1px solid var(--line); }
+.doc-section h2 { margin: 0 0 14px; font-size: 20px; font-weight: 600; letter-spacing: -0.01em; }
+.doc-section h2 a:hover { color: var(--accent); }
+.doc-section p, .doc-section li { color: var(--ink-2); font-size: 15px; line-height: 1.65; }
+.doc-section p { margin: 0 0 14px; }
+.doc-section b { color: var(--ink); font-weight: 500; }
+.doc-section ul, .doc-section ol { margin: 0 0 14px; padding-left: 20px; }
+.doc-section li + li { margin-top: 6px; }
+.doc-section li::marker { color: var(--ink-4); }
+
+.doc-steps { list-style: none; counter-reset: step; padding-left: 0 !important; }
+.doc-steps li { counter-increment: step; position: relative; padding-left: 36px; }
+.doc-steps li + li { margin-top: 12px; }
+.doc-steps li::before {
+  content: counter(step); position: absolute; left: 0; top: 1px; width: 24px; height: 24px; border-radius: 50%;
+  display: grid; place-items: center; background: var(--surface-3); color: var(--ink); font-size: 12px; font-weight: 500;
+}
+
+.doc-note { color: var(--ink-4) !important; font-size: 13px !important; }
+.doc-link { color: var(--ink); text-decoration: underline; text-decoration-color: var(--ink-4); text-underline-offset: 3px; }
+.doc-link:hover { text-decoration-color: var(--ink); }
+
+.doc-facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 20px 0 0; }
+.doc-facts dt, .doc-leak span { color: var(--ink-4); font-size: 12px; }
+.doc-facts dd { margin: 4px 0 0; color: var(--ink); font-size: 14px; line-height: 1.5; }
+
+.doc-leak { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 0 0 14px; }
+.doc-leak div { padding: 14px 16px; border-radius: 16px; background: var(--surface-2); }
+.doc-leak p { margin: 4px 0 0; color: var(--ink); font-size: 14px; }
+
+.doc-table { width: 100%; border-collapse: collapse; margin: 0 0 14px; font-size: 14px; }
+.doc-table th { padding: 0 12px 8px 0; color: var(--ink-4); font-size: 12px; font-weight: 400; text-align: left; }
+.doc-table td { padding: 12px 12px 12px 0; border-top: 1px solid var(--line); color: var(--ink-2); line-height: 1.5; vertical-align: top; }
+.doc-table td:first-child { width: 120px; color: var(--ink); font-weight: 500; }
+
+.doc-faq { margin: 0 0 14px; }
+.doc-faq div { padding: 14px 0; border-top: 1px solid var(--line); }
+.doc-faq div:first-child { border-top: 0; padding-top: 0; }
+.doc-faq dt { color: var(--ink); font-size: 15px; font-weight: 500; }
+.doc-faq dd { margin: 4px 0 0; color: var(--ink-3); font-size: 14px; line-height: 1.6; }
+
+@media (max-width: 900px) {
+  .docs-page { grid-template-columns: minmax(0, 680px); }
+  .docs-toc { display: none; }
+}
+@media (max-width: 760px) {
+  .docs-page { padding: 20px 16px 48px; }
+  .doc-section { padding-top: 28px; margin-top: 28px; }
+  .doc-facts, .doc-leak { grid-template-columns: 1fr; }
+  .doc-table td:first-child { width: 96px; }
+}
+.doc-stack td:last-child a { font-weight: 500; }
+.doc-stack td:last-child span { display: block; margin-top: 2px; color: var(--ink-3); }
+.doc-stack tr:not(:has(td:first-child:empty)) td { border-top-color: var(--surface-3); }
+.doc-stack tr:first-child td { border-top: 0; }
