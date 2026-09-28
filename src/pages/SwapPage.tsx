@@ -193,12 +193,10 @@ export default function SwapPage() {
           <a href="/docs" onClick={linkTo('/docs')}>
             Docs
           </a>
+          <a href="https://github.com/utkurock/lethea" target="_blank" rel="noreferrer">
+            GitHub
+          </a>
         </span>
-        <ul className="trust">
-          <li>Non-custodial</li>
-          <li>35+ chains of liquidity</li>
-          <li>XLM and USDC from Stellar</li>
-        </ul>
         <a href="https://near-intents.org" target="_blank" rel="noreferrer">
           Powered by NEAR Intents
         </a>
