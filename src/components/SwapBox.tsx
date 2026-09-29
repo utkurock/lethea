@@ -28,12 +28,22 @@ export function SwapBox({ config, target }: Props) {
   const [source, setSource] = useState<Pick>(config.defaultSourceToken as Pick);
   const [dest, setDest] = useState<Pick | undefined>(target ?? (config.defaultTargetToken as Pick | undefined));
   const [optIn, setOptIn] = useState(false);
+  const [otherRecipient, setOtherRecipient] = useState(false);
 
   const chain = source.blockchain;
   const depositOnly = DEPOSIT_CHAINS.includes(chain);
   const hasWallet =
     chain === 'stellar' ? !!xlm.address : chain === 'sol' ? !!sol.address : chain === 'near' ? !!near.address : !!evm.address;
   const allow = depositOnly || hasWallet || optIn;
+
+  // A wallet already connected on the payout chain is the recipient, so the address field only
+  // appears when the user asks to send somewhere else.
+  const destId = dest?.blockchain;
+  const myDest =
+    !destId || DEPOSIT_CHAINS.includes(destId)
+      ? undefined
+      : destId === 'stellar' ? xlm.address : destId === 'sol' ? sol.address : destId === 'near' ? near.address : evm.address;
+  const autoRecipient = myDest && !otherRecipient ? myDest : undefined;
 
   // The widget keeps its external-deposit flag after the option is withdrawn, which would leave the
   // address fields on screen. Remounting it on the pair the user already picked clears that.
@@ -69,10 +79,12 @@ export function SwapBox({ config, target }: Props) {
     () => ({
       ...config,
       allowSwapWithExternalWallet: allow,
+      sendAddress: autoRecipient ?? null,
+      hideSendAddress: !!autoRecipient,
       defaultSourceToken: mount.source,
       ...(mount.dest ? { defaultTargetToken: mount.dest } : {}),
     }),
-    [config, allow, mount],
+    [config, allow, mount, autoRecipient],
   );
 
   return (
@@ -88,6 +100,18 @@ export function SwapBox({ config, target }: Props) {
           }}
         />
       </WidgetConfigProvider>
+      {myDest && (
+        <p className="recipient-note">
+          {autoRecipient ? (
+            <>
+              Receiving on {destChain} at <b>{short(myDest)}</b>, your connected wallet.{' '}
+              <button onClick={() => setOtherRecipient(true)}>Use another address</button>
+            </>
+          ) : (
+            <button onClick={() => setOtherRecipient(false)}>Receive in my {destChain} wallet instead</button>
+          )}
+        </p>
+      )}
       {!depositOnly && !hasWallet && (
         <button className="external-switch" onClick={() => setOptIn((v) => !v)}>
           {optIn ? 'Connect a wallet instead' : 'No wallet here? Pay to a deposit address instead'}
@@ -96,3 +120,5 @@ export function SwapBox({ config, target }: Props) {
     </>
   );
 }
+
+const short = (a: string) => `${a.slice(0, 4)}…${a.slice(-4)}`;
