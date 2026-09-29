@@ -44,6 +44,7 @@ const STACK: Layer[] = [
 
 const SECTIONS = [
   { id: 'overview', title: 'Overview' },
+  { id: 'networks', title: 'Mainnet and testnet' },
   { id: 'wallets', title: 'Connect a wallet' },
   { id: 'swap', title: 'Swap' },
   { id: 'chains', title: 'Chains and assets' },
@@ -127,6 +128,41 @@ export function DocsPage() {
               <dd>Confidential mode on mainnet, Private Send on testnet</dd>
             </div>
           </dl>
+        </Section>
+
+        <Section id="networks">
+          <p>
+            Swaps move real funds. Private Send is a testnet preview. The header marks it with a <b>Testnet</b> tag.
+          </p>
+          <table className="doc-table">
+            <thead>
+              <tr>
+                <th>Feature</th>
+                <th>Network</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Swap</td>
+                <td>Mainnet on every chain: EVM chains, Stellar, Solana, NEAR, Bitcoin, Zcash, XRP Ledger, Dogecoin</td>
+              </tr>
+              <tr>
+                <td>Confidential mode</td>
+                <td>Mainnet, on the NEAR Intents private shard</td>
+              </tr>
+              <tr>
+                <td>Token pages and prices</td>
+                <td>Mainnet data from NEAR Intents and Hyperliquid</td>
+              </tr>
+              <tr>
+                <td>Private Send</td>
+                <td>Stellar testnet only. Test XLM, no real value</td>
+              </tr>
+            </tbody>
+          </table>
+          <p className="doc-note">
+            Keep your Stellar wallet on Mainnet for swaps and switch it to Testnet for Private Send.
+          </p>
         </Section>
 
         <Section id="wallets">
