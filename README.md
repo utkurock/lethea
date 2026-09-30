@@ -1,8 +1,14 @@
 # Lethea
 
+<p align="center">
+  <img src="docs/media/ghosts.gif" alt="The Lethea ghost running all of its moves at once: peeking, talking, spinning and flying by" width="800">
+</p>
+
 Lethea is a cross-chain swap app with a privacy option. You pay from one chain, sign a single deposit, and receive on another. Routing and settlement go through [NEAR Intents](https://docs.near-intents.org), so Lethea never holds funds. Your wallet signs every transfer, and if a swap cannot be filled, NEAR Intents refunds the deposit to the address it came from.
 
 The app is a static React site. It has no backend and stores no user data. Every request goes from the browser straight to the service it needs.
+
+![Swap page with the ticker, the swap box and the ghost in the dithered background](docs/media/swap.png)
 
 ## What it does
 
@@ -36,9 +42,15 @@ One wallet signature derives your privacy keys and registers your public keys wi
 
 Notes and keys are tied to the wallet address, so switching wallets starts a separate private balance.
 
+![Private Send page asking for a testnet Stellar wallet](docs/media/private-send.png)
+
 ### Token pages and docs
 
 The price strip at the top links to `/token/:symbol`. Each page shows the live price from NEAR Intents, a chart and 24h volume from Hyperliquid perpetual markets, the range high and low, and a swap box that targets that token. Stablecoins have no chart. `/docs` covers the same ground as this file from a user's point of view.
+
+| Token page | Docs |
+| --- | --- |
+| ![ETH token page with price, weekly chart and a swap box targeting ETH](docs/media/token.png) | ![Docs page with the section list on the left](docs/media/docs.png) |
 
 ## Wallets
 
@@ -106,6 +118,7 @@ public/
   fonts/                Jeko
   spp/                  vendored Stellar Private Payments SDK and testnet deployments.json
 brand/                  logo source images and make-logo.py
+docs/media/             README screenshots and the ghost GIF
 ```
 
 ## Notes for contributors
