@@ -30,9 +30,11 @@ export function useIntentsConfig(openWalletPicker: () => void): Partial<WidgetCo
       referral: 'lethea',
       alchemyApiKey: import.meta.env.VITE_ALCHEMY_API_KEY || undefined,
 
-      // Address is picked by the selected token's chain, falling back to `default`.
+      // Address is picked by the selected token's chain, falling back to `default`, which therefore
+      // covers the EVM chains only. Falling back to a Stellar or Solana address there handed the widget
+      // a non-EVM address as the ETH wallet.
       connectedWallets: {
-        default: evmW.address ?? xlmW.address ?? solW.address ?? nearW.address ?? null,
+        default: evmW.address ?? null,
         stellar: xlmW.address ?? null,
         sol: solW.address ?? null,
         near: nearW.address ?? null,

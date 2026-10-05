@@ -1,4 +1,6 @@
-import { TOKENS_DATA, type Chains } from '@aurora-is-near/intents-swap-widget';
+import type { Chains } from '@aurora-is-near/intents-swap-widget';
+// The constants entry, not the package root: the root would pull the whole widget into the first chunk.
+import { TOKENS as TOKENS_DATA } from '@aurora-is-near/intents-swap-widget/constants';
 import { useEffect, useState } from 'react';
 
 export type IntentsToken = {

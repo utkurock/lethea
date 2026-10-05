@@ -1,23 +1,24 @@
 import '@aurora-is-near/intents-swap-widget/styles.css';
 import './swap.css';
-import { useCallback, useEffect, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import { DitherField } from '../components/DitherField';
-import { SwapBox } from '../components/SwapBox';
+import { SwapSlot } from '../components/SwapSlot';
 import { Ticker } from '../components/Ticker';
 import { ChainLogo, WalletPicker, type ChainId } from '../components/WalletPicker';
-import { useIntentsConfig } from '../intents/useIntentsConfig';
 import { short } from '../lib/format';
 import { linkTo, usePath } from '../lib/router';
 import { DOT } from '../lib/theme';
 import { findToken } from '../lib/tokens';
 import { TokenPage } from './TokenPage';
-import { PrivatePage } from './PrivatePage';
-import { DocsPage } from './DocsPage';
 import { FLAGS } from '../features/flags';
 import { useEvmWallet } from '../wallets/evm';
 import { useNearWallet } from '../wallets/near';
 import { useSolanaWallet } from '../wallets/solana';
 import { useStellarWallet } from '../wallets/stellar';
+
+// Pages that aren't the landing one load when first visited.
+const PrivatePage = lazy(() => import('./PrivatePage').then((m) => ({ default: m.PrivatePage })));
+const DocsPage = lazy(() => import('./DocsPage').then((m) => ({ default: m.DocsPage })));
 
 const missingKey = !import.meta.env.VITE_INTENTS_API_KEY;
 
@@ -51,7 +52,6 @@ export default function SwapPage() {
   const openPicker = useCallback(() => setPicker({}), []);
   const openStellarPicker = useCallback(() => setPicker({ only: 'xlm' }), []);
   const closePicker = useCallback(() => setPicker(null), []);
-  const config = useIntentsConfig(openPicker);
   const evmW = useEvmWallet();
   const xlmW = useStellarWallet();
   const solW = useSolanaWallet();
@@ -160,11 +160,15 @@ export default function SwapPage() {
       <Ticker />
 
       {isDocs ? (
-        <DocsPage />
+        <Suspense fallback={null}>
+          <DocsPage />
+        </Suspense>
       ) : isPrivate ? (
-        <PrivatePage onConnect={openStellarPicker} />
+        <Suspense fallback={null}>
+          <PrivatePage onConnect={openStellarPicker} />
+        </Suspense>
       ) : token ? (
-        <TokenPage token={token} config={config} />
+        <TokenPage token={token} onConnect={openPicker} />
       ) : (
         <div className="stage">
           <section className="hero">
@@ -175,7 +179,7 @@ export default function SwapPage() {
           <main className="swap-layout">
             <section className="swap-col">
               <div id="swap-root">
-                <SwapBox config={config} />
+                <SwapSlot onConnect={openPicker} />
               </div>
 
               <p className="mode-note">

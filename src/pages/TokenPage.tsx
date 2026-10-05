@@ -1,7 +1,6 @@
-import type { WidgetConfig } from '@aurora-is-near/intents-swap-widget';
 import { useState } from 'react';
 import { PriceChart } from '../components/PriceChart';
-import { SwapBox } from '../components/SwapBox';
+import { SwapSlot } from '../components/SwapSlot';
 import { short } from '../lib/format';
 import { RANGES, usePerpStats, useHistory, type Range } from '../lib/history';
 import { linkTo } from '../lib/router';
@@ -15,9 +14,9 @@ const RANGE_LABEL: Record<Range, string> = {
   '1Y': 'Past year',
 };
 
-type Props = { token: TokenInfo; config: Partial<WidgetConfig> };
+type Props = { token: TokenInfo; onConnect: () => void };
 
-export function TokenPage({ token, config }: Props) {
+export function TokenPage({ token, onConnect }: Props) {
   const [range, setRange] = useState<Range>('1W');
   const list = useIntentsTokens();
   const { points, loading, error } = useHistory(token.hlCoin, range);
@@ -135,7 +134,7 @@ export function TokenPage({ token, config }: Props) {
       <aside className="token-buy">
         <h2>Buy {token.symbol}</h2>
         <div id="swap-root">
-          <SwapBox key={token.symbol} config={config} target={{ symbol: token.symbol, blockchain: token.chain }} />
+          <SwapSlot key={token.symbol} onConnect={onConnect} target={{ symbol: token.symbol, blockchain: token.chain }} />
         </div>
       </aside>
     </main>

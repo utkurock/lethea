@@ -1,7 +1,14 @@
-import { CHAINS, Widget, WidgetConfigProvider, type Chains, type WidgetConfig } from '@aurora-is-near/intents-swap-widget';
+import {
+  CHAINS,
+  Widget,
+  WidgetConfigProvider,
+  fireEvent,
+  useUnsafeSnapshot,
+  type Chains,
+} from '@aurora-is-near/intents-swap-widget';
 import i18n from 'i18next';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { DEPOSIT_CHAINS } from '../intents/useIntentsConfig';
+import { DEPOSIT_CHAINS, useIntentsConfig } from '../intents/useIntentsConfig';
 import { WIDGET_THEME } from '../lib/theme';
 import { useEvmWallet } from '../wallets/evm';
 import { useNearWallet } from '../wallets/near';
@@ -9,7 +16,7 @@ import { useSolanaWallet } from '../wallets/solana';
 import { useStellarWallet } from '../wallets/stellar';
 
 type Pick = { symbol: string; blockchain: Chains };
-type Props = { config: Partial<WidgetConfig>; target?: Pick };
+type Props = { onConnect: () => void; target?: Pick };
 
 /**
  * The swap widget, with "send from an external wallet" offered only where it makes sense.
@@ -19,14 +26,30 @@ type Props = { config: Partial<WidgetConfig>; target?: Pick };
  * is on for chains no wallet can sign on (Bitcoin and co.), available but off once a wallet for
  * the source chain is connected, and otherwise one click away for people who prefer it.
  */
-export function SwapBox({ config, target }: Props) {
+export default function SwapBox({ onConnect, target: targetProp }: Props) {
+  const config = useIntentsConfig(onConnect);
+  // Callers pass a fresh object each render; a changing default would keep resetting the widget.
+  const target = useMemo(
+    () => (targetProp ? { symbol: targetProp.symbol, blockchain: targetProp.blockchain } : undefined),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [targetProp?.symbol, targetProp?.blockchain],
+  );
   const evm = useEvmWallet();
   const xlm = useStellarWallet();
   const sol = useSolanaWallet();
   const near = useNearWallet();
 
-  const [source, setSource] = useState<Pick>(config.defaultSourceToken as Pick);
-  const [dest, setDest] = useState<Pick | undefined>(target ?? (config.defaultTargetToken as Pick | undefined));
+  // The pair is read from the widget's own store. Its direction arrow swaps the tokens without an
+  // on_select_token message, so a copy kept from onMsg went stale and pointed the recipient at the
+  // wrong chain (a Stellar address offered as the ETH payout), which sent the widget into a render loop.
+  const { ctx } = useUnsafeSnapshot();
+  const fallbackDest = target ?? (config.defaultTargetToken as Pick | undefined);
+  const source: Pick = ctx.sourceToken
+    ? { symbol: ctx.sourceToken.symbol, blockchain: ctx.sourceToken.blockchain }
+    : (config.defaultSourceToken as Pick);
+  const dest: Pick | undefined = ctx.targetToken
+    ? { symbol: ctx.targetToken.symbol, blockchain: ctx.targetToken.blockchain }
+    : fallbackDest;
   const [optIn, setOptIn] = useState(false);
   const [otherRecipient, setOtherRecipient] = useState(false);
 
@@ -46,14 +69,12 @@ export function SwapBox({ config, target }: Props) {
   const autoRecipient = myDest && !otherRecipient ? myDest : undefined;
 
   // The widget keeps its external-deposit flag after the option is withdrawn, which would leave the
-  // address fields on screen. Remounting it on the pair the user already picked clears that.
-  const [mount, setMount] = useState({ n: 0, source, dest });
+  // address fields on screen. Clear it the way the widget does itself. This used to remount the widget
+  // instead, and a remount right after the direction arrow sent its tooltip refs into a render loop.
   const wasAllowed = useRef(allow);
   useEffect(() => {
-    if (wasAllowed.current && !allow) setMount((m) => ({ n: m.n + 1, source, dest }));
+    if (wasAllowed.current && !allow) fireEvent('depositTypeSet', { isExternal: false });
     wasAllowed.current = allow;
-    // Only the transition matters; the pair is read at that moment.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [allow]);
 
   // Name the payout chain in the recipient field, the way the widget already names the refund chain.
@@ -81,24 +102,15 @@ export function SwapBox({ config, target }: Props) {
       allowSwapWithExternalWallet: allow,
       sendAddress: autoRecipient ?? null,
       hideSendAddress: !!autoRecipient,
-      defaultSourceToken: mount.source,
-      ...(mount.dest ? { defaultTargetToken: mount.dest } : {}),
+      ...(target ? { defaultTargetToken: target } : {}),
     }),
-    [config, allow, mount, autoRecipient],
+    [config, allow, target, autoRecipient],
   );
 
   return (
     <>
-      <WidgetConfigProvider key={mount.n} config={widgetConfig} theme={WIDGET_THEME}>
-        <Widget
-          defaultMode="swap"
-          onMsg={(msg) => {
-            if (msg.type !== 'on_select_token') return;
-            const pick = { symbol: msg.token.symbol, blockchain: msg.token.blockchain as Chains };
-            if (msg.variant === 'source') setSource(pick);
-            else setDest(pick);
-          }}
-        />
+      <WidgetConfigProvider config={widgetConfig} theme={WIDGET_THEME}>
+        <Widget defaultMode="swap" />
       </WidgetConfigProvider>
       {myDest && (
         <p className="recipient-note">

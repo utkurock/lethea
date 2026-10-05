@@ -10,9 +10,40 @@
     <title>Lethea</title>
     <link rel="preload" href="/fonts/jeko-400.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="/fonts/jeko-500.woff2" as="font" type="font/woff2" crossorigin />
+    <style>
+      /* Shown until React replaces #root, so a slow connection sees the page coming instead of black. */
+      html, body { margin: 0; background: #0c0c0e; }
+      .boot { position: fixed; inset: 0; display: grid; place-items: center; color: #9ea1a8; font: 14px system-ui, sans-serif; }
+      .boot svg { width: 44px; animation: boot 1.6s ease-in-out infinite; }
+      .boot p { display: none; margin: 16px 0 0; text-align: center; }
+      .boot.slow p, .boot.fail p { display: block; }
+      .boot a { color: #f5f5f6; }
+      @keyframes boot { 50% { transform: translateY(-6px); opacity: 0.6; } }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div class="boot" id="boot">
+        <div>
+          <svg viewBox="0 0 52 60" aria-label="Lethea"><path fill="#c9ced6" d="M4.16 23.84a21.84 21.84 0 0 1 43.68 0V54q-7.28 8-14.56 0-7.28 8-14.56 0-7.28 8-14.56 0Z"/><ellipse cx="17.7" cy="25.84" rx="4.2" ry="5.4" fill="#0c0c0e"/><ellipse cx="34.3" cy="25.84" rx="4.2" ry="5.4" fill="#0c0c0e"/></svg>
+          <p id="boot-msg">Still loading…</p>
+        </div>
+      </div>
+    </div>
+    <script>
+      // If the app never mounts (old browser, blocked script, crash at load), say so instead of staying blank.
+      (function () {
+        var boot = document.getElementById('boot');
+        var fail = function () {
+          if (!document.getElementById('boot')) return;
+          boot.className = 'boot fail';
+          document.getElementById('boot-msg').innerHTML = 'Lethea could not start in this browser.<br><a href="">Reload</a>';
+        };
+        setTimeout(function () { if (document.getElementById('boot')) boot.className = 'boot slow'; }, 8000);
+        window.addEventListener('error', function (e) { if (e.target && e.target.tagName === 'SCRIPT') fail(); }, true);
+        window.__bootFail = fail;
+      })();
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

@@ -1,4 +1,9 @@
 import './polyfills';
 
 // Load the app only after globals exist; static imports would be hoisted above the polyfill.
-void import('./bootstrap');
+import('./bootstrap').catch((err: unknown) => {
+  console.error(err);
+  (window as { __bootFail?: () => void }).__bootFail?.();
+});
+// The landing and token pages open on the swap widget, the largest chunk: fetch it alongside the app.
+if (!/^\/(docs|private)/.test(location.pathname)) void import('./components/SwapBox');
