@@ -1,11 +1,13 @@
 import '@aurora-is-near/intents-swap-widget/styles.css';
 import './swap.css';
-import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
+import { Suspense, useCallback, useEffect, useState } from 'react';
 import { DitherField } from '../components/DitherField';
+import { Fence } from '../components/Fence';
 import { SwapSlot } from '../components/SwapSlot';
 import { Ticker } from '../components/Ticker';
 import { ChainLogo, WalletPicker, type ChainId } from '../components/WalletPicker';
 import { short } from '../lib/format';
+import { lazyChunk } from '../lib/lazy';
 import { linkTo, usePath } from '../lib/router';
 import { DOT } from '../lib/theme';
 import { findToken } from '../lib/tokens';
@@ -17,8 +19,8 @@ import { useSolanaWallet } from '../wallets/solana';
 import { useStellarWallet } from '../wallets/stellar';
 
 // Pages that aren't the landing one load when first visited.
-const PrivatePage = lazy(() => import('./PrivatePage').then((m) => ({ default: m.PrivatePage })));
-const DocsPage = lazy(() => import('./DocsPage').then((m) => ({ default: m.DocsPage })));
+const PrivatePage = lazyChunk(() => import('./PrivatePage').then((m) => ({ default: m.PrivatePage })));
+const DocsPage = lazyChunk(() => import('./DocsPage').then((m) => ({ default: m.DocsPage })));
 
 const missingKey = !import.meta.env.VITE_INTENTS_API_KEY;
 
@@ -160,13 +162,17 @@ export default function SwapPage() {
       <Ticker />
 
       {isDocs ? (
-        <Suspense fallback={null}>
-          <DocsPage />
-        </Suspense>
+        <Fence message="This page couldn't load." className="page-crash">
+          <Suspense fallback={null}>
+            <DocsPage />
+          </Suspense>
+        </Fence>
       ) : isPrivate ? (
-        <Suspense fallback={null}>
-          <PrivatePage onConnect={openStellarPicker} />
-        </Suspense>
+        <Fence message="This page couldn't load." className="page-crash">
+          <Suspense fallback={null}>
+            <PrivatePage onConnect={openStellarPicker} />
+          </Suspense>
+        </Fence>
       ) : token ? (
         <TokenPage token={token} onConnect={openPicker} />
       ) : (

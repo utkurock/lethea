@@ -6,4 +6,4 @@ import('./bootstrap').catch((err: unknown) => {
   (window as { __bootFail?: () => void }).__bootFail?.();
 });
 // The landing and token pages open on the swap widget, the largest chunk: fetch it alongside the app.
-if (!/^\/(docs|private)/.test(location.pathname)) void import('./components/SwapBox');
+if (!/^\/(docs|private)/.test(location.pathname)) import('./components/SwapBox').catch(() => {}); // SwapSlot retries and reports it
