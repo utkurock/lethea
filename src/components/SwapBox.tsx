@@ -18,6 +18,11 @@ import { useStellarWallet } from '../wallets/stellar';
 type Pick = { symbol: string; blockchain: Chains };
 type Props = { onConnect: () => void; target?: Pick };
 
+// Paid with when the page's token is the default source itself (the ETH page), where the widget would
+// otherwise drop the target for being the same token and leave nothing to buy.
+const ALT_SOURCE: Pick = { symbol: 'USDC', blockchain: 'eth' };
+const same = (a?: Pick, b?: Pick) => !!a && !!b && a.symbol === b.symbol && a.blockchain === b.blockchain;
+
 /**
  * The swap widget, with "send from an external wallet" offered only where it makes sense.
  *
@@ -43,10 +48,11 @@ export default function SwapBox({ onConnect, target: targetProp }: Props) {
   // on_select_token message, so a copy kept from onMsg went stale and pointed the recipient at the
   // wrong chain (a Stellar address offered as the ETH payout), which sent the widget into a render loop.
   const { ctx } = useUnsafeSnapshot();
+  const defaultSource = same(target, config.defaultSourceToken as Pick) ? ALT_SOURCE : (config.defaultSourceToken as Pick);
   const fallbackDest = target ?? (config.defaultTargetToken as Pick | undefined);
   const source: Pick = ctx.sourceToken
     ? { symbol: ctx.sourceToken.symbol, blockchain: ctx.sourceToken.blockchain }
-    : (config.defaultSourceToken as Pick);
+    : defaultSource;
   const dest: Pick | undefined = ctx.targetToken
     ? { symbol: ctx.targetToken.symbol, blockchain: ctx.targetToken.blockchain }
     : fallbackDest;
@@ -102,9 +108,10 @@ export default function SwapBox({ onConnect, target: targetProp }: Props) {
       allowSwapWithExternalWallet: allow,
       sendAddress: autoRecipient ?? null,
       hideSendAddress: !!autoRecipient,
+      defaultSourceToken: defaultSource,
       ...(target ? { defaultTargetToken: target } : {}),
     }),
-    [config, allow, target, autoRecipient],
+    [config, allow, defaultSource, target, autoRecipient],
   );
 
   return (
