@@ -209,6 +209,9 @@ export default function SwapPage() {
           <a href="https://github.com/utkurock/lethea" target="_blank" rel="noreferrer">
             GitHub
           </a>
+          <a href="https://x.com/Utkurocks" target="_blank" rel="noreferrer">
+            X
+          </a>
         </span>
         <a href="https://near-intents.org" target="_blank" rel="noreferrer">
           Powered by NEAR Intents
