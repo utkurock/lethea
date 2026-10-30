@@ -207,6 +207,38 @@ img.plated { background: #fff; padding: 2px; box-sizing: border-box; }
 .mode-note { margin: clamp(8px, 1.6vh, 16px) 4px 0; color: var(--ink-4); font-size: 12px; line-height: 1.5; }
 .mode-note b { color: var(--ink-2); font-weight: 500; }
 
+/* On-chain transfers of the connected wallets, under the swap box. Collapsed so the page stays one screen. */
+.activity { margin-top: clamp(10px, 1.6vh, 18px); border-top: 1px solid var(--line); }
+.activity-toggle {
+  display: flex; justify-content: space-between; align-items: center; width: 100%;
+  padding: 12px 4px; border: 0; background: none; cursor: pointer; color: var(--ink-3); font-size: 13px;
+}
+.activity-toggle:hover { color: var(--ink); }
+.activity-toggle span { font-size: 16px; line-height: 1; }
+.activity-list {
+  display: grid; gap: 4px; max-height: 300px; margin: 0; padding: 0; overflow-y: auto; list-style: none;
+}
+.activity-list a {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px;
+  padding: 10px 12px; border-radius: 12px; background: var(--surface);
+}
+.activity-list a:hover { background: var(--surface-2); }
+.activity-dir {
+  display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%;
+  background: var(--surface-3); font-size: 14px;
+}
+.activity-dir.in { color: var(--up); }
+.activity-dir.out { color: var(--ink-3); }
+.activity-main, .activity-side { display: grid; gap: 2px; min-width: 0; }
+.activity-main b { font-weight: 500; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.activity-side { text-align: right; color: var(--ink-2); font-size: 13px; }
+.activity-main small, .activity-side small { color: var(--ink-4); font-size: 12px; }
+.activity-note { margin: 10px 4px 0; color: var(--ink-4); font-size: 12px; line-height: 1.5; }
+.activity-note button {
+  padding: 0; border: 0; background: none; cursor: pointer; color: var(--ink-2); font: inherit;
+  text-decoration: underline; text-underline-offset: 3px;
+}
+
 /* Footer */
 .foot {
   display: flex; align-items: center; justify-content: space-between; gap: 16px; flex: none;

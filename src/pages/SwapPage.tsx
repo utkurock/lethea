@@ -5,6 +5,7 @@ import { DitherField } from '../components/DitherField';
 import { Fence } from '../components/Fence';
 import { SwapSlot } from '../components/SwapSlot';
 import { Ticker } from '../components/Ticker';
+import { WalletActivity } from '../components/WalletActivity';
 import { ChainLogo, WalletPicker, type ChainId } from '../components/WalletPicker';
 import { short } from '../lib/format';
 import { lazyChunk } from '../lib/lazy';
@@ -192,6 +193,8 @@ export default function SwapPage() {
                 <b>Confidential</b> hides sender, amount and route. The deposit and the payout stay visible on
                 their own chains.
               </p>
+
+              <WalletActivity stellar={xlmW.address} evm={evmW.address} />
             </section>
           </main>
         </div>
