@@ -197,6 +197,33 @@ img.plated { background: #fff; padding: 2px; box-sizing: border-box; }
   background: var(--ink-2); color: var(--bg); font-weight: 500;
 }
 .page-crash { margin: auto; width: min(420px, calc(100% - 32px)); box-sizing: border-box; }
+/* After a swap is signed: the payout in flight, counted against the quote's estimate. */
+.tracker { margin: 12px 0 0; padding: 14px 16px 12px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); }
+.tracker-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.tracker-title { margin: 0; font-size: 15px; font-weight: 500; }
+.tracker-time { margin: 2px 0 0; color: var(--ink-3); font-size: 13px; font-variant-numeric: tabular-nums; }
+.tracker-close { flex: none; width: 28px; height: 28px; border: 0; border-radius: 50%; background: var(--surface-3); color: var(--ink-3); font-size: 18px; line-height: 1; cursor: pointer; }
+.tracker-close:hover { color: var(--ink); }
+.tracker-bar { height: 4px; margin: 12px 0; border-radius: 4px; background: var(--surface-3); overflow: hidden; }
+.tracker-bar span { display: block; height: 100%; background: var(--ink-2); transform-origin: left; transition: transform 1s linear; }
+.tracker.ok .tracker-bar span { background: var(--up); }
+.tracker.bad .tracker-bar span { background: var(--down); }
+.tracker-steps { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; font-size: 13px; color: var(--ink-4); }
+.tracker-steps li { display: flex; align-items: center; gap: 8px; }
+.tracker-steps li::before { content: ''; flex: none; width: 8px; height: 8px; border: 1.5px solid currentColor; border-radius: 50%; }
+.tracker-steps li.done { color: var(--ink-2); }
+.tracker-steps li.done::before { border-color: var(--up); background: var(--up); }
+.tracker-steps li.active { color: var(--ink); }
+.tracker-steps li.active::before { border-color: var(--ink); border-top-color: transparent; animation: tracker-spin 0.8s linear infinite; }
+.tracker-steps li.fail { color: var(--down); }
+.tracker-steps li.fail::before { background: var(--down); border-color: var(--down); }
+@keyframes tracker-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .tracker-bar span { transition: none; }
+  .tracker-steps li.active::before { animation: none; }
+}
+.tracker-link { display: inline-block; margin-top: 10px; color: var(--ink); font-size: 13px; text-decoration: underline; text-underline-offset: 2px; }
+
 .recipient-note { margin: 10px 4px 0; color: var(--ink-3); font-size: 13px; line-height: 1.5; text-align: center; }
 .recipient-note b { color: var(--ink-2); font-weight: 500; }
 .recipient-note button {

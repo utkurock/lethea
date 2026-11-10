@@ -10,6 +10,7 @@ import i18n from 'i18next';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { DEPOSIT_CHAINS } from '../intents/chains';
 import { pct, type AppFee } from '../intents/fees';
+import { SwapTracker, type Tracked } from './SwapTracker';
 import { useIntentsConfig } from '../intents/useIntentsConfig';
 import { WIDGET_THEME } from '../lib/theme';
 import { useEvmWallet } from '../wallets/evm';
@@ -70,6 +71,14 @@ export default function SwapBox({ onConnect, target: targetProp, recipient: reci
     ? { symbol: ctx.targetToken.symbol, blockchain: ctx.targetToken.blockchain }
     : fallbackDest;
   const [optIn, setOptIn] = useState(false);
+  const [tracked, setTracked] = useState<Tracked>();
+  // The quote the user signed for. The widget clears it as it resets after a transfer, so keep the last one.
+  type SignedQuote = { depositAddress?: string; depositMemo?: string; timeEstimate?: number; amountOutFormatted?: string };
+  const lastQuote = useRef<SignedQuote>(undefined);
+  const quote = (ctx as { quote?: SignedQuote }).quote;
+  useEffect(() => {
+    if (quote?.depositAddress) lastQuote.current = quote;
+  }, [quote]);
   const [otherRecipient, setOtherRecipient] = useState(false);
 
   const chain = source.blockchain;
@@ -137,7 +146,23 @@ export default function SwapBox({ onConnect, target: targetProp, recipient: reci
   return (
     <>
       <WidgetConfigProvider config={widgetConfig} theme={WIDGET_THEME}>
-        <Widget defaultMode="swap" />
+        <Widget
+          defaultMode="swap"
+          onMsg={(msg) => {
+            const q = lastQuote.current;
+            if (msg.type !== 'on_transfer_success' || !q?.depositAddress) return;
+            setTracked({
+              depositAddress: q.depositAddress,
+              depositMemo: q.depositMemo,
+              estimate: q.timeEstimate ?? 60,
+              startedAt: Date.now(),
+              amountOut: q.amountOutFormatted ? Number(q.amountOutFormatted).toLocaleString('en-US', { maximumSignificantDigits: 6 }) : undefined,
+              symbol: dest?.symbol,
+              chainLabel: destChain,
+            });
+          }}
+        />
+        {tracked && <SwapTracker key={tracked.depositAddress} swap={tracked} onClose={() => setTracked(undefined)} />}
       </WidgetConfigProvider>
       {myDest && !recipient && (
         <p className="recipient-note">
