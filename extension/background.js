@@ -100,6 +100,76 @@ async function lookup({ cashtags, addresses }) {
 }
 
 // ---------------------------------------------------------------------------------------------------------
+// Live quotes for the hover card: what $100 from a few other chains buys of a token, straight from the
+// NEAR Intents 1Click API. They are dry quotes, so nothing is deposited, and both ends are a placeholder
+// NEAR Intents account, since the price doesn't depend on who pays or receives.
+
+const QUOTE_USD = 100;
+// Native coins on chains a browser wallet can't pay from, plus Solana and USDC, to show "any chain".
+const QUOTE_FROM = [
+  { symbol: 'BTC', blockchain: 'btc' },
+  { symbol: 'ZEC', blockchain: 'zec' },
+  { symbol: 'SOL', blockchain: 'sol' },
+  { symbol: 'USDC', blockchain: 'eth' },
+];
+const PLACEHOLDER = 'root.near';
+const quoteCache = new Map();
+
+/** `usd` dollars of `t` in its smallest unit, as the integer string 1Click expects. */
+function units(t, usd) {
+  const whole = usd / t.price;
+  const shift = Math.min(t.decimals, 6);
+  return (BigInt(Math.round(whole * 10 ** shift)) * 10n ** BigInt(t.decimals - shift)).toString();
+}
+
+async function quoteOne(from, to) {
+  const deadline = new Date(Date.now() + 10 * 60_000).toISOString();
+  const r = await fetch('https://1click.chaindefuser.com/v0/quote', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      dry: true,
+      swapType: 'EXACT_INPUT',
+      slippageTolerance: 100,
+      originAsset: from.assetId,
+      depositType: 'ORIGIN_CHAIN',
+      destinationAsset: to.assetId,
+      amount: units(from, QUOTE_USD),
+      refundTo: PLACEHOLDER,
+      refundType: 'INTENTS',
+      recipient: PLACEHOLDER,
+      recipientType: 'INTENTS',
+      deadline,
+    }),
+  });
+  const body = await r.json();
+  if (!r.ok || !body.quote) throw new Error(body.message || `quote ${r.status}`);
+  return {
+    from: from.symbol,
+    amountIn: Number(body.quote.amountInFormatted),
+    amountOut: Number(body.quote.amountOutFormatted),
+    seconds: body.quote.timeEstimate,
+  };
+}
+
+/** Up to three quotes into the token, from sources other than the token itself. Failed ones are left out. */
+async function quotes({ chain, symbol }) {
+  await loadTokens();
+  const to = tokens.find((t) => t.blockchain === chain && t.symbol === symbol);
+  if (!to) return [];
+  const key = to.assetId;
+  const hit = quoteCache.get(key);
+  if (hit && Date.now() - hit.at < 30_000) return hit.data;
+  const sources = QUOTE_FROM.map((f) => tokens.find((t) => t.blockchain === f.blockchain && t.symbol === f.symbol))
+    .filter((t) => t?.price && t.assetId !== to.assetId)
+    .slice(0, 3);
+  const settled = await Promise.allSettled(sources.map((f) => quoteOne(f, to)));
+  const data = settled.filter((s) => s.status === 'fulfilled').map((s) => s.value);
+  if (data.length) quoteCache.set(key, { at: Date.now(), data });
+  return data;
+}
+
+// ---------------------------------------------------------------------------------------------------------
 // GoPlus checks. Its free tier is rate limited, so requests go one at a time and results are kept.
 
 const cache = new Map();
@@ -243,9 +313,10 @@ async function openPopup(url) {
   popup = win.id;
 }
 
-function openBuy({ chain, symbol, post, warn = [] }) {
+function openBuy({ chain, symbol, post, creator, warn = [] }) {
   const url = new URL(`/buy/${encodeURIComponent(chain)}/${encodeURIComponent(symbol)}`, LETHEA_URL);
   if (post) url.searchParams.set('post', post);
+  if (creator) url.searchParams.set('creator', creator);
   for (const w of warn.slice(0, 3)) url.searchParams.append('warn', w.slice(0, 160));
   return openPopup(url);
 }
@@ -257,7 +328,7 @@ function openPay({ handle, to }) {
   return openPopup(url);
 }
 
-const HANDLERS = { lookup, scanToken: ({ address }) => scanToken(address), scanSites, openBuy, openPay };
+const HANDLERS = { lookup, quotes, scanToken: ({ address }) => scanToken(address), scanSites, openBuy, openPay };
 
 chrome.runtime.onMessage.addListener((msg, _sender, reply) => {
   const handler = HANDLERS[msg?.type];

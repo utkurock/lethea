@@ -77,19 +77,97 @@
   }
 
   /**
-   * `warnings` lists the post's red flags when clicked, so the buy page can repeat them. The price shows
-   * on the button when it is short enough to fit; a memecoin's many zeros stay in the tooltip.
+   * `from` is the post the button sits in: its link, its author's .near account, which earns a share of
+   * the swap, and `warnings`, the post's red flags at click time, which the buy page repeats. The price
+   * shows on the button when it is short enough to fit; a memecoin's many zeros stay in the tooltip.
    */
-  function swapButton(listing, post, label, warnings) {
+  function swapButton(listing, label, from) {
     const btn = button('lethea-swap', label);
     if (listing.price >= 0.01) btn.append(el('span', 'lethea-price', price(listing.price)));
     const where = listing.contractAddress ? `${listing.blockchain} ${short(listing.contractAddress)}` : `native on ${listing.blockchain}`;
-    btn.title = `Buy ${listing.symbol} (${where})${listing.price ? ` at ${price(listing.price)}` : ''} from any chain through NEAR Intents`;
+    btn.title =
+      `Buy ${listing.symbol} (${where})${listing.price ? ` at ${price(listing.price)}` : ''} from any chain through NEAR Intents` +
+      (from.creator ? `\n0.1% goes to ${from.creator}, who wrote this post` : '');
     btn.addEventListener('click', (e) => {
       e.preventDefault();
-      void send({ type: 'openBuy', chain: listing.blockchain, symbol: listing.symbol, post, warn: warnings() });
+      void send({ type: 'openBuy', chain: listing.blockchain, symbol: listing.symbol, post: from.post, creator: from.creator, warn: from.warnings() });
     });
+    attachQuote(btn, listing);
     return btn;
+  }
+
+  const amount = (n) =>
+    n >= 1e6
+      ? n.toLocaleString('en-US', { notation: 'compact', maximumFractionDigits: 2 })
+      : n.toLocaleString('en-US', { maximumSignificantDigits: 4 });
+  const eta = (s) => (s < 90 ? `~${Math.max(1, Math.round(s))}s` : `~${Math.round(s / 60)} min`);
+
+  // One hover card for the whole page, moved to whichever Swap button is hovered or focused.
+  let card;
+  let cardFor;
+  function showQuote(btn, listing) {
+    card ??= guard(el('div', 'lethea-quote'));
+    cardFor = btn;
+    card.replaceChildren(el('div', 'lethea-quote-head', `$100 from any chain buys`), el('div', 'lethea-quote-wait', 'Asking NEAR Intents…'));
+    document.body.append(card);
+    const r = btn.getBoundingClientRect();
+    const below = r.bottom + 8 + 150 < innerHeight;
+    card.style.left = `${Math.min(Math.max(8, r.left), innerWidth - 268)}px`;
+    card.style.top = below ? `${r.bottom + 8}px` : '';
+    card.style.bottom = below ? '' : `${innerHeight - r.top + 8}px`;
+    void send({ type: 'quotes', chain: listing.blockchain, symbol: listing.symbol }).then((rows) => {
+      if (cardFor !== btn || !card.isConnected) return;
+      const list = el('div', 'lethea-quote-rows');
+      for (const q of rows ?? []) {
+        const line = el('div', 'lethea-quote-row');
+        line.append(el('span', 'lethea-quote-from', `${amount(q.amountIn)} ${q.from}`), el('span', 'lethea-quote-out', `${amount(q.amountOut)} ${listing.symbol}`), el('span', 'lethea-quote-eta', eta(q.seconds)));
+        list.append(line);
+      }
+      card.replaceChildren(
+        el('div', 'lethea-quote-head', `$100 from any chain buys`),
+        rows?.length ? list : el('div', 'lethea-quote-wait', 'No quotes right now'),
+        el('div', 'lethea-quote-foot', 'Live NEAR Intents quotes, fees included'),
+      );
+    });
+  }
+  function hideQuote(btn) {
+    if (cardFor !== btn) return;
+    cardFor = undefined;
+    card?.remove();
+  }
+  function attachQuote(btn, listing) {
+    let timer;
+    const open = () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => showQuote(btn, listing), 250);
+    };
+    const close = () => {
+      clearTimeout(timer);
+      hideQuote(btn);
+    };
+    btn.addEventListener('mouseenter', open);
+    btn.addEventListener('focus', open);
+    btn.addEventListener('mouseleave', close);
+    btn.addEventListener('blur', close);
+    btn.addEventListener('click', close);
+  }
+
+  /**
+   * The .near account in the name of the post's author. The author is the nearest name link above the
+   * text, so a quoted post gets its own author; links inside the text are mentions, not the author.
+   */
+  function creatorOf(textEl) {
+    const stop = textEl.closest('article');
+    for (let node = textEl.parentElement; node; node = node.parentElement) {
+      const name =
+        node.querySelector('[data-testid="User-Name"] a')?.innerText ??
+        [...node.querySelectorAll('a[href]')].find(
+          (a) => /^\/\w{1,15}$/.test(a.getAttribute('href')) && !textEl.contains(a) && a.innerText.trim() && !a.innerText.trim().startsWith('@'),
+        )?.innerText;
+      if (name) return walletsIn(name).find((w) => w.endsWith('.near'));
+      if (node === stop) return undefined;
+    }
+    return undefined;
   }
 
   function chip(risk, text, title) {
@@ -138,17 +216,17 @@
     // Checks go in a bar under the text, added once there is something to show.
     const row = bar();
     const show = () => !row.isConnected && textEl.after(row);
-    const warnings = () => [...row.querySelectorAll('.lethea-danger')].map((c) => c.textContent);
+    const from = { post, creator: creatorOf(textEl), warnings: () => [...row.querySelectorAll('.lethea-danger')].map((c) => c.textContent) };
 
     // A Swap button right after each cashtag NEAR Intents lists.
     for (const a of tagLinks) {
       const listing = found?.swaps[a.textContent.trim().slice(1).toUpperCase()];
-      if (listing && !a.nextElementSibling?.classList.contains('lethea-swap')) a.after(swapButton(listing, post, 'Swap', warnings));
+      if (listing && !a.nextElementSibling?.classList.contains('lethea-swap')) a.after(swapButton(listing, 'Swap', from));
     }
 
     for (const { address, listing, impostorOf } of found?.addresses ?? []) {
       if (listing) {
-        row.append(chip('ok', `${short(address)} is ${listing.symbol} on NEAR Intents`, address), swapButton(listing, post, `Swap ${listing.symbol}`, warnings));
+        row.append(chip('ok', `${short(address)} is ${listing.symbol} on NEAR Intents`, address), swapButton(listing, `Swap ${listing.symbol}`, from));
       } else if (impostorOf) {
         row.append(chip('danger', `${short(address)} is not the $${impostorOf} NEAR Intents lists`, `${address}\nThe post names $${impostorOf} but gives a different contract. Swap buttons buy the listed one.`));
       } else {
