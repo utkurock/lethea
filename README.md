@@ -58,9 +58,11 @@ The price strip at the top links to `/token/:symbol`. Each page shows the live p
 
 ![Lethea for X on sample posts: Swap buttons on cashtags, a Pay button on a profile, and checks under posts with contract addresses and links](docs/media/x-extension.png)
 
-The extension in [`extension/`](extension) reads posts as X renders them and adds three things.
+The extension in [`extension/`](extension) reads posts as X renders them and adds four things.
 
-**Swap on cashtags.** A Swap button appears next to every cashtag that NEAR Intents lists, such as `$ETH`, `$ZEC` or `$PEPE`. It opens `lethea.xyz/buy/<chain>/<symbol>` in a small popup with the token already selected, and you can pay from any chain Lethea supports, Bitcoin, Zcash and XRP included. When a symbol is listed on several chains, the native asset wins. The button always buys the asset NEAR Intents lists, never an address written in the post.
+**Swap on cashtags.** A Swap button with the live price appears next to every cashtag that NEAR Intents lists, such as `$ETH`, `$ZEC` or `$PEPE`. Hovering it shows what $100 of BTC, ZEC or SOL buys right now, from dry 1Click quotes, and how long each route takes. Clicking it opens `lethea.xyz/buy/<chain>/<symbol>` in a small popup with the token already selected, and you can pay from any chain Lethea supports, Bitcoin, Zcash and XRP included. When a symbol is listed on several chains, the native asset wins. The button always buys the asset NEAR Intents lists, never an address written in the post.
+
+**A share for the post's author.** If the author of the post has a `.near` account in their X name, such as `Alice · alice.near`, 0.1% of a swap opened from that post goes to that account. It is paid through NEAR Intents' `appFees`, so the intent pays it when it settles and Lethea never holds it. The buy page first checks that the account exists, and names the fee on the fee line in the quote details. Writers who put a `.near` name on X earn from the trades their posts start.
 
 **Scam checks under posts.** These show up under any post that has a contract address or an outside link:
 
@@ -87,7 +89,7 @@ The Swap and Pay buttons open `https://lethea.xyz`. To point them at a local `np
 
 ### What it sends where
 
-The extension has no server and keeps nothing on disk. It fetches the NEAR Intents token list, sends contract addresses and link domains from posts you scroll past to GoPlus, and opens Lethea with the token or payee in the URL. It reads both of X's current page builds: the older one with `data-testid` attributes and the late-2026 one without them.
+The extension has no server and keeps nothing on disk. It fetches the NEAR Intents token list and, when you hover a Swap button, dry quotes from 1Click. It sends contract addresses and link domains from posts you scroll past to GoPlus, and opens Lethea with the token, the post, the author's `.near` account or the payee in the URL. It reads both of X's current page builds: the older one with `data-testid` attributes and the late-2026 one without them.
 
 ### Limits
 
@@ -122,6 +124,7 @@ npm run dev
 | `VITE_INTENTS_API_KEY` | Yes | NEAR Intents key from [studio.aurora.dev](https://studio.aurora.dev) |
 | `VITE_ALCHEMY_API_KEY` | No | EVM token balances in the swap box |
 | `VITE_ENABLE_SPP` | No | `true` turns on Private Send. Keep it `false` on mainnet builds |
+| `VITE_FEE_ACCOUNT` | No | NEAR account that receives Lethea's 0.1% on swaps opened from X. Without it Lethea takes nothing |
 
 `.env.example` also lists `VITE_REOWN_PROJECT_ID`. The current code does not read it.
 
@@ -179,15 +182,16 @@ Swaps run on mainnet. NEAR Intents has no testnet, so the extension's Swap and P
 
 ## NEAR HACKATHON
 
-Lethea for X was built for [NEAR HACKATHON](https://nearhackathon.com) (1 to 14 November 2026), for the Unstoppable DeFi track.
+Lethea for X was built for [NEAR HACKATHON](https://nearhackathon.com) (1 to 14 November 2026). It is entered in the Unstoppable DeFi track, as trading that settles across chains through NEAR Intents, and in Open Innovation, as chain abstraction in the place people already talk about tokens.
 
 Lethea itself existed before the hackathon. The swap site, wallets, token pages and Private Send were built in September and October 2026, and the `pre-hackathon` tag marks where that work ends. Everything after it, on the `near-hackathon` branch, was built during the hackathon: [compare `pre-hackathon` with `near-hackathon`](https://github.com/utkurock/lethea/compare/pre-hackathon...near-hackathon).
 
 New in the hackathon window:
 
-- The Lethea for X extension: Swap buttons on cashtags, the scam checks, and Pay buttons on profiles
+- The Lethea for X extension: Swap buttons with live quotes on cashtags, the scam checks, and Pay buttons on profiles
+- Fee sharing with post authors who have a `.near` name, through NEAR Intents `appFees`
 - `/buy/:chain/:symbol` and `/pay/:handle` on the site, sized for the extension's popup
-- A fixed-recipient mode for the swap box, used by the pay page
+- A fixed-recipient mode and app fees for the swap box, used by the pay and buy pages
 - A fix for the background canvas in windows that open at zero size
 
-Services and libraries the new work uses: the NEAR Intents 1Click token list, Aurora's Intents Swap Widget (already in Lethea), the GoPlus Security API, FastNEAR's public RPC for NEAR account checks, and wagmi/viem for ENS names. None of them is a template; the extension is plain JavaScript with no build step.
+Services and libraries the new work uses: the NEAR Intents 1Click token list and quote API, Aurora's Intents Swap Widget (already in Lethea), the GoPlus Security API, FastNEAR's public RPC for NEAR account checks, and wagmi/viem for ENS names. None of them is a template; the extension is plain JavaScript with no build step.
