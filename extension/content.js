@@ -26,6 +26,18 @@
   const GHOST =
     '<svg viewBox="0 0 52 60" aria-hidden="true"><path fill="currentColor" d="M4.16 23.84a21.84 21.84 0 0 1 43.68 0V54q-7.28 8-14.56 0-7.28 8-14.56 0-7.28 8-14.56 0Z"/><ellipse cx="17.7" cy="25.84" rx="4.2" ry="5.4" fill="var(--lethea-eye)"/><ellipse cx="34.3" cy="25.84" rx="4.2" ry="5.4" fill="var(--lethea-eye)"/></svg>';
 
+  // Line icons for the checks, drawn in the chip's own colour.
+  const stroke = (d) =>
+    `<svg viewBox="0 0 16 16" aria-hidden="true"><path d="${d}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  const ICONS = {
+    ok: stroke('M3.5 8.5l3 3 6-7'),
+    danger: stroke('M5 5l6 6m0-6l-6 6'),
+    caution: stroke('M8 3.5v5.5M8 12.4v.1'),
+    unknown: stroke('M6 6.2a2 2 0 1 1 2.6 1.9c-.4.2-.6.5-.6.9v.5M8 12.4v.1'),
+    wait: '<span class="lethea-spin" aria-hidden="true"></span>',
+  };
+  const ARROW = stroke('M5 11l6-6M6 5h5v5');
+
   /** Messages to background.js. Resolves to null once the extension has been reloaded under the page. */
   function send(msg) {
     try {
@@ -37,9 +49,11 @@
 
   const short = (a) => `${a.slice(0, 4)}…${a.slice(-4)}`;
   const price = (p) =>
-    p >= 1
-      ? `$${p.toLocaleString('en-US', { maximumFractionDigits: 2 })}`
-      : `$${p.toLocaleString('en-US', { maximumSignificantDigits: 4 })}`;
+    p >= 1000
+      ? `$${p.toLocaleString('en-US', { maximumFractionDigits: 0 })}`
+      : p >= 1
+        ? `$${p.toLocaleString('en-US', { maximumFractionDigits: 2 })}`
+        : `$${p.toLocaleString('en-US', { maximumSignificantDigits: 4 })}`;
 
   function el(tag, cls, text) {
     const node = document.createElement(tag);
@@ -54,12 +68,21 @@
     return node;
   }
 
-  /** `warnings` lists the post's red flags when clicked, so the buy page can repeat them. */
-  function swapButton(listing, post, label, warnings) {
-    const btn = guard(el('button', 'lethea-swap'));
+  function button(cls, label) {
+    const btn = guard(el('button', `lethea-btn ${cls}`));
     btn.type = 'button';
     btn.innerHTML = GHOST;
-    btn.append(label);
+    btn.append(el('span', 'lethea-label', label));
+    return btn;
+  }
+
+  /**
+   * `warnings` lists the post's red flags when clicked, so the buy page can repeat them. The price shows
+   * on the button when it is short enough to fit; a memecoin's many zeros stay in the tooltip.
+   */
+  function swapButton(listing, post, label, warnings) {
+    const btn = button('lethea-swap', label);
+    if (listing.price >= 0.01) btn.append(el('span', 'lethea-price', price(listing.price)));
     const where = listing.contractAddress ? `${listing.blockchain} ${short(listing.contractAddress)}` : `native on ${listing.blockchain}`;
     btn.title = `Buy ${listing.symbol} (${where})${listing.price ? ` at ${price(listing.price)}` : ''} from any chain through NEAR Intents`;
     btn.addEventListener('click', (e) => {
@@ -70,9 +93,21 @@
   }
 
   function chip(risk, text, title) {
-    const c = el('span', `lethea-chip lethea-${risk}`, text);
+    const c = el('span', `lethea-chip lethea-${risk}`);
+    c.innerHTML = ICONS[risk] ?? '';
+    c.append(el('span', null, text));
     if (title) c.title = title;
     return c;
+  }
+
+  /** A row under a post or bio, led by the Lethea mark so it reads as ours and not X's. */
+  function bar(cls) {
+    const row = guard(el('div', `lethea-bar ${cls ?? ''}`.trim()));
+    const mark = el('span', 'lethea-brand');
+    mark.innerHTML = GHOST;
+    mark.append('Lethea');
+    row.append(mark);
+    return row;
   }
 
   // The current build puts the full address in the title; the older one shows it, cut short, as the text.
@@ -101,10 +136,9 @@
     const found = (cashtags.length || addresses.length) && (await send({ type: 'lookup', cashtags, addresses }));
 
     // Checks go in a bar under the text, added once there is something to show.
-    const bar = guard(el('div', 'lethea-bar'));
-    bar.innerHTML = GHOST;
-    const show = () => !bar.isConnected && textEl.after(bar);
-    const warnings = () => [...bar.querySelectorAll('.lethea-danger')].map((c) => c.textContent);
+    const row = bar();
+    const show = () => !row.isConnected && textEl.after(row);
+    const warnings = () => [...row.querySelectorAll('.lethea-danger')].map((c) => c.textContent);
 
     // A Swap button right after each cashtag NEAR Intents lists.
     for (const a of tagLinks) {
@@ -114,12 +148,12 @@
 
     for (const { address, listing, impostorOf } of found?.addresses ?? []) {
       if (listing) {
-        bar.append(chip('ok', `${short(address)} is ${listing.symbol} on NEAR Intents`, address), swapButton(listing, post, `Swap ${listing.symbol}`, warnings));
+        row.append(chip('ok', `${short(address)} is ${listing.symbol} on NEAR Intents`, address), swapButton(listing, post, `Swap ${listing.symbol}`, warnings));
       } else if (impostorOf) {
-        bar.append(chip('danger', `${short(address)} is not the $${impostorOf} NEAR Intents lists`, `${address}\nThe post names $${impostorOf} but gives a different contract. Swap buttons buy the listed one.`));
+        row.append(chip('danger', `${short(address)} is not the $${impostorOf} NEAR Intents lists`, `${address}\nThe post names $${impostorOf} but gives a different contract. Swap buttons buy the listed one.`));
       } else {
         const pending = chip('wait', `Checking ${short(address)}…`, address);
-        bar.append(pending);
+        row.append(pending);
         void send({ type: 'scanToken', address }).then((v) => {
           if (!v) return pending.replaceWith(chip('unknown', `${short(address)}: check failed`, address));
           const name = v.symbol ? `${v.symbol} (${short(address)})` : short(address);
@@ -138,7 +172,7 @@
     if (hosts.length) {
       const sites = await send({ type: 'scanSites', hosts, text });
       for (const s of sites ?? []) {
-        bar.append(chip(s.risk, s.note, s.host));
+        row.append(chip(s.risk, s.note, s.host));
         show();
       }
     }
@@ -190,23 +224,21 @@
     const links = [...head.querySelectorAll('a[href^="http"]')].map((a) => (/^https?:\/\//.test(a.title) ? a.title : a.textContent));
     const wallets = walletsIn([nameEl.innerText, bio?.innerText ?? '', ...links].join('\n'));
 
-    const bar = guard(el('div', 'lethea-bar lethea-pay'));
-    bar.dataset.handle = handle;
-    bar.innerHTML = GHOST;
+    const row = bar('lethea-pay');
+    row.dataset.handle = handle;
     for (const to of wallets) {
-      const btn = guard(el('button', 'lethea-swap'));
-      btn.type = 'button';
-      btn.innerHTML = GHOST;
-      btn.append(`Pay ${/\.(near|eth)$/.test(to) ? to : short(to)}`);
+      const btn = button('lethea-paybtn', 'Pay');
+      btn.append(el('span', 'lethea-to', /\.(near|eth)$/.test(to) ? to : short(to)));
+      btn.insertAdjacentHTML('beforeend', ARROW);
       btn.title = `Pay @${handle} at ${to} with any token from any chain. Lethea checks the address before you send.`;
       btn.addEventListener('click', (e) => {
         e.preventDefault();
         void send({ type: 'openPay', handle, to });
       });
-      bar.append(btn);
+      row.append(btn);
     }
-    if (!wallets.length) bar.append(chip('unknown', `No wallet in @${handle}'s profile`, 'Add a .near or .eth name, or an address, to your bio and people can pay you from any chain.'));
-    (bio ?? nameEl).after(bar);
+    if (!wallets.length) row.append(chip('unknown', `No wallet in @${handle}'s profile`, 'Add a .near or .eth name, or an address, to your bio and people can pay you from any chain.'));
+    (bio ?? nameEl).after(row);
   }
 
   // X renders posts as you scroll and recycles their nodes; each text element is read once.
