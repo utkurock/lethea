@@ -340,8 +340,9 @@ export function DitherField({ dot }: Props) {
     let lastKey = '';
 
     const resize = () => {
-      const w = window.innerWidth;
-      const h = window.innerHeight;
+      // A window that is still opening, like the extension's popup, can report a zero size for a moment.
+      const w = Math.max(1, window.innerWidth);
+      const h = Math.max(1, window.innerHeight);
       canvas.width = w;
       canvas.height = h;
       cols = Math.ceil(w / CELL);
