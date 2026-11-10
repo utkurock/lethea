@@ -8,7 +8,8 @@ import {
 } from '@aurora-is-near/intents-swap-widget';
 import i18n from 'i18next';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { DEPOSIT_CHAINS, useIntentsConfig } from '../intents/useIntentsConfig';
+import { DEPOSIT_CHAINS } from '../intents/chains';
+import { useIntentsConfig } from '../intents/useIntentsConfig';
 import { WIDGET_THEME } from '../lib/theme';
 import { useEvmWallet } from '../wallets/evm';
 import { useNearWallet } from '../wallets/near';

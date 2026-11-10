@@ -7,13 +7,8 @@ import { useEvmWallet } from '../wallets/evm';
 import { useNearWallet } from '../wallets/near';
 import { useSolanaWallet } from '../wallets/solana';
 import { useStellarWallet } from '../wallets/stellar';
+import { CHAINS } from './chains';
 
-// Chains we can sign on with a connected wallet.
-export const WALLET_CHAINS: Chains[] = ['stellar', 'eth', 'base', 'arb', 'op', 'pol', 'bsc', 'avax', 'sol', 'near'];
-// No browser wallet signs for these through the widget: the user sends from their own wallet to a
-// one-time deposit address instead. SwapBox turns allowSwapWithExternalWallet on for them.
-export const DEPOSIT_CHAINS: Chains[] = ['btc', 'zec', 'xrp', 'doge'];
-const CHAINS: Chains[] = [...WALLET_CHAINS, ...DEPOSIT_CHAINS];
 // Quick chain chips in the token picker. The type asks for four, but the widget renders the whole list;
 // its chip row is one line tall and hides overflow, and six is what fits.
 const SHORTCUTS = ['eth', 'stellar', 'base', 'arb', 'bsc', 'btc'] as unknown as [Chains, Chains, Chains, Chains];
