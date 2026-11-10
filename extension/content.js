@@ -7,6 +7,9 @@
   const SOL = /\b(?=[1-9A-HJ-NP-Za-km-z]*\d)[1-9A-HJ-NP-Za-km-z]{32,44}\b/g;
   const CASHTAG = /^\$([A-Za-z][A-Za-z0-9]{0,11})$/;
   const X_HOSTS = /(^|\.)(x\.com|twitter\.com|t\.co)$/;
+  // Post text. X's older build marks it with data-testid; the current one (late 2026) has no test ids, and
+  // a post's text, a quoted post's text and a link card's text are each a div[dir=auto] inside the article.
+  const TEXT = '[data-testid="tweetText"], article div[dir="auto"]';
 
   const GHOST =
     '<svg viewBox="0 0 52 60" aria-hidden="true"><path fill="currentColor" d="M4.16 23.84a21.84 21.84 0 0 1 43.68 0V54q-7.28 8-14.56 0-7.28 8-14.56 0-7.28 8-14.56 0Z"/><ellipse cx="17.7" cy="25.84" rx="4.2" ry="5.4" fill="var(--lethea-eye)"/><ellipse cx="34.3" cy="25.84" rx="4.2" ry="5.4" fill="var(--lethea-eye)"/></svg>';
@@ -59,8 +62,9 @@
     return c;
   }
 
+  // The current build puts the full address in the title; the older one shows it, cut short, as the text.
   function hostOf(link) {
-    const shown = link.textContent.replace(/…$/, '').trim();
+    const shown = (/^https?:\/\//.test(link.title) ? link.title : link.textContent).replace(/…$/, '').trim();
     try {
       return new URL(/^https?:\/\//.test(shown) ? shown : `https://${shown}`).hostname.replace(/^www\./, '').toLowerCase();
     } catch {
@@ -69,8 +73,9 @@
   }
 
   async function read(textEl) {
-    const article = textEl.closest('article') ?? textEl.parentElement;
-    const post = article?.querySelector('a[href*="/status/"] time')?.closest('a')?.href;
+    const article = textEl.closest('article');
+    const ref = textEl.closest('[data-href*="/status/"]')?.getAttribute('data-href') ?? article?.querySelector('a[href*="/status/"]')?.getAttribute('href');
+    const post = ref ? new URL(ref, location.origin).href : undefined;
     const text = textEl.innerText;
 
     const tagLinks = [...textEl.querySelectorAll('a')].filter((a) => CASHTAG.test(a.textContent.trim()));
@@ -125,14 +130,15 @@
     }
   }
 
-  // X renders posts as you scroll and recycles their nodes; each tweetText element is read once.
+  // X renders posts as you scroll and recycles their nodes; each text element is read once.
   const seen = new WeakSet();
   let queued = false;
   function scan() {
     queued = false;
-    for (const textEl of document.querySelectorAll('[data-testid="tweetText"]')) {
+    for (const textEl of document.querySelectorAll(TEXT)) {
       if (seen.has(textEl)) continue;
       seen.add(textEl);
+      if (textEl.closest('a')) continue; // a link card's title and summary
       void read(textEl);
     }
   }

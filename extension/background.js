@@ -37,7 +37,7 @@ const BRANDS = {
   solana: ['solana.com'],
   ethereum: ['ethereum.org'],
   layerzero: ['layerzero.network'],
-  near: ['near.org', 'near.ai', 'near-intents.org', 'nearhackathon.com'],
+  near: ['near.org', 'near.com', 'near.ai', 'near-intents.org', 'nearhackathon.com'],
   lethea: [new URL(LETHEA_URL).hostname],
 };
 
