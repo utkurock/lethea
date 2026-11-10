@@ -1,10 +1,10 @@
 import type { Chains } from '@aurora-is-near/intents-swap-widget';
 import { CHAINS_LIST } from '@aurora-is-near/intents-swap-widget/constants';
-import { useEffect, useState } from 'react';
 import { normalize } from 'viem/ens';
 import { useEnsAddress } from 'wagmi';
 import { mainnet } from 'wagmi/chains';
 import { SwapSlot } from '../components/SwapSlot';
+import { isNearName, useNearAccount } from '../lib/near';
 import { linkTo } from '../lib/router';
 
 type Props = { handle: string; onConnect: () => void };
@@ -17,7 +17,7 @@ type Payee = { name: string; kind: 'near' | 'ens' | 'evm' | 'sol' | 'stellar' | 
 
 // Anyone can write a /pay link, so the address is checked here and not taken from the extension on trust.
 function parsePayee(to: string): Payee | undefined {
-  if (/^(([a-z\d]+[-_])*[a-z\d]+\.)+near$/.test(to) && to.length <= 64)
+  if (isNearName(to))
     return { name: to, kind: 'near', chains: ['near'], asset: { symbol: 'USDC', blockchain: 'near' } };
   if (/^([a-z\d-]+\.)+eth$/i.test(to)) return { name: to.toLowerCase(), kind: 'ens', chains: EVM_CHAINS, asset: { symbol: 'USDC', blockchain: 'base' } };
   if (/^0x[a-fA-F\d]{40}$/.test(to)) return { name: to, kind: 'evm', chains: EVM_CHAINS, asset: { symbol: 'USDC', blockchain: 'base' } };
@@ -25,36 +25,6 @@ function parsePayee(to: string): Payee | undefined {
   if (/^bc1[ac-hj-np-z02-9]{25,59}$/.test(to)) return { name: to, kind: 'btc', chains: ['btc'], asset: { symbol: 'BTC', blockchain: 'btc' } };
   if (/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(to)) return { name: to, kind: 'sol', chains: ['sol'], asset: { symbol: 'USDC', blockchain: 'sol' } };
   return undefined;
-}
-
-/** A named NEAR account has to exist before it can receive; an intent to a missing one would be refunded. */
-type NearState = 'checking' | 'ok' | 'missing' | 'error';
-function useNearAccount(name?: string): NearState {
-  const [result, setResult] = useState<{ name: string; state: NearState }>();
-  useEffect(() => {
-    if (!name) return;
-    let live = true;
-    const setState = (state: NearState) => live && setResult({ name, state });
-    fetch('https://rpc.mainnet.fastnear.com', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        jsonrpc: '2.0',
-        id: 1,
-        method: 'query',
-        params: { request_type: 'view_account', finality: 'final', account_id: name },
-      }),
-    })
-      .then((r) => r.json())
-      .then((body: { result?: unknown; error?: { cause?: { name?: string } } }) => {
-        setState(body.result ? 'ok' : body.error?.cause?.name === 'UNKNOWN_ACCOUNT' ? 'missing' : 'error');
-      })
-      .catch(() => setState('error'));
-    return () => {
-      live = false;
-    };
-  }, [name]);
-  return result && result.name === name ? result.state : 'checking';
 }
 
 // ENS normalisation rejects some names the pattern lets through, such as a hyphen in the third and fourth place.
