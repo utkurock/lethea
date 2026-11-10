@@ -6,6 +6,8 @@ import {
   useUnsafeSnapshot,
   type Chains,
 } from '@aurora-is-near/intents-swap-widget';
+// The widget's stylesheet is most of the app's CSS, so it loads with the widget and not with the page shell.
+import '@aurora-is-near/intents-swap-widget/styles.css';
 import i18n from 'i18next';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { DEPOSIT_CHAINS } from '../intents/chains';

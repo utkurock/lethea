@@ -5,5 +5,5 @@ import('./bootstrap').catch((err: unknown) => {
   console.error(err);
   (window as { __bootFail?: () => void }).__bootFail?.();
 });
-// The landing and token pages open on the swap widget, the largest chunk: fetch it alongside the app.
-if (!/^\/(docs|private)/.test(location.pathname)) import('./components/SwapBox').catch(() => {}); // SwapSlot retries and reports it
+// The swap widget, by far the largest chunk, is fetched when SwapSlot first renders. Fetching it here as
+// well made it compete with the app shell for bandwidth and pushed the first paint back on slow links.

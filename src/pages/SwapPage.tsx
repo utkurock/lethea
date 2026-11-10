@@ -1,4 +1,3 @@
-import '@aurora-is-near/intents-swap-widget/styles.css';
 import './swap.css';
 import { Suspense, useCallback, useEffect, useState } from 'react';
 import { DitherField } from '../components/DitherField';
@@ -12,8 +11,6 @@ import { lazyChunk } from '../lib/lazy';
 import { linkTo, usePath } from '../lib/router';
 import { DOT } from '../lib/theme';
 import { findToken } from '../lib/tokens';
-import { BuyPage } from './BuyPage';
-import { PayPage } from './PayPage';
 import { TokenPage } from './TokenPage';
 import { FLAGS } from '../features/flags';
 import { useEvmWallet } from '../wallets/evm';
@@ -24,6 +21,9 @@ import { useStellarWallet } from '../wallets/stellar';
 // Pages that aren't the landing one load when first visited.
 const PrivatePage = lazyChunk(() => import('./PrivatePage').then((m) => ({ default: m.PrivatePage })));
 const DocsPage = lazyChunk(() => import('./DocsPage').then((m) => ({ default: m.DocsPage })));
+// Opened from the X extension; the pay page also brings ENS name handling, which no other page needs.
+const BuyPage = lazyChunk(() => import('./BuyPage').then((m) => ({ default: m.BuyPage })));
+const PayPage = lazyChunk(() => import('./PayPage').then((m) => ({ default: m.PayPage })));
 
 const missingKey = !import.meta.env.VITE_INTENTS_API_KEY;
 
@@ -179,10 +179,16 @@ export default function SwapPage() {
             <PrivatePage onConnect={openStellarPicker} />
           </Suspense>
         </Fence>
-      ) : pay ? (
-        <PayPage handle={decodeURIComponent(pay)} onConnect={openPicker} />
-      ) : buy ? (
-        <BuyPage chain={buy[0]} symbol={buy[1]} onConnect={openPicker} />
+      ) : pay || buy ? (
+        <Fence message="This page couldn't load." className="page-crash">
+          <Suspense fallback={null}>
+            {pay ? (
+              <PayPage handle={decodeURIComponent(pay)} onConnect={openPicker} />
+            ) : (
+              buy && <BuyPage chain={buy[0]} symbol={buy[1]} onConnect={openPicker} />
+            )}
+          </Suspense>
+        </Fence>
       ) : token ? (
         <TokenPage token={token} onConnect={openPicker} />
       ) : (
