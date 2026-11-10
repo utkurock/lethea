@@ -17,7 +17,9 @@ import { useSolanaWallet } from '../wallets/solana';
 import { useStellarWallet } from '../wallets/stellar';
 
 type Pick = { symbol: string; blockchain: Chains };
-type Props = { onConnect: () => void; target?: Pick };
+/** A fixed payee: the payout goes to `address`, and the target token may only be on `chains`. */
+export type Recipient = { address: string; chains: Chains[] };
+type Props = { onConnect: () => void; target?: Pick; recipient?: Recipient };
 
 // Paid with when the page's token is the default source itself (the ETH page), where the widget would
 // otherwise drop the target for being the same token and leave nothing to buy.
@@ -32,13 +34,19 @@ const same = (a?: Pick, b?: Pick) => !!a && !!b && a.symbol === b.symbol && a.bl
  * is on for chains no wallet can sign on (Bitcoin and co.), available but off once a wallet for
  * the source chain is connected, and otherwise one click away for people who prefer it.
  */
-export default function SwapBox({ onConnect, target: targetProp }: Props) {
+export default function SwapBox({ onConnect, target: targetProp, recipient: recipientProp }: Props) {
   const config = useIntentsConfig(onConnect);
   // Callers pass a fresh object each render; a changing default would keep resetting the widget.
   const target = useMemo(
     () => (targetProp ? { symbol: targetProp.symbol, blockchain: targetProp.blockchain } : undefined),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [targetProp?.symbol, targetProp?.blockchain],
+  );
+  const recipientChains = recipientProp?.chains.join();
+  const recipient = useMemo(
+    () => recipientProp && { address: recipientProp.address, chains: recipientProp.chains },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [recipientProp?.address, recipientChains],
   );
   const evm = useEvmWallet();
   const xlm = useStellarWallet();
@@ -73,7 +81,7 @@ export default function SwapBox({ onConnect, target: targetProp }: Props) {
     !destId || DEPOSIT_CHAINS.includes(destId)
       ? undefined
       : destId === 'stellar' ? xlm.address : destId === 'sol' ? sol.address : destId === 'near' ? near.address : evm.address;
-  const autoRecipient = myDest && !otherRecipient ? myDest : undefined;
+  const autoRecipient = recipient?.address ?? (myDest && !otherRecipient ? myDest : undefined);
 
   // The widget keeps its external-deposit flag after the option is withdrawn, which would leave the
   // address fields on screen. Clear it the way the widget does itself. This used to remount the widget
@@ -111,8 +119,10 @@ export default function SwapBox({ onConnect, target: targetProp }: Props) {
       hideSendAddress: !!autoRecipient,
       defaultSourceToken: defaultSource,
       ...(target ? { defaultTargetToken: target } : {}),
+      // A payee's address is only valid on its own chain family, so the target can't move off it.
+      ...(recipient ? { allowedTargetChainsList: recipient.chains } : {}),
     }),
-    [config, allow, defaultSource, target, autoRecipient],
+    [config, allow, defaultSource, target, autoRecipient, recipient],
   );
 
   return (
@@ -120,7 +130,7 @@ export default function SwapBox({ onConnect, target: targetProp }: Props) {
       <WidgetConfigProvider config={widgetConfig} theme={WIDGET_THEME}>
         <Widget defaultMode="swap" />
       </WidgetConfigProvider>
-      {myDest && (
+      {myDest && !recipient && (
         <p className="recipient-note">
           {autoRecipient ? (
             <>
