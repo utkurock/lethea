@@ -536,55 +536,80 @@ export function DitherField({ dot }: Props) {
       ctx.putImageData(img, 0, 0);
     };
 
-    resize();
-    draw(0);
-    const onResize = () => {
+    // Sets the field up and runs it; returns the teardown.
+    const run = () => {
       resize();
       draw(0);
-    };
-    window.addEventListener('resize', onResize);
-    // Content moves on navigation and while the widget loads, so the mask is re-read now and then.
-    const poll = setInterval(measure, 500);
-    // Scrolling moves every box at once; re-read on the next frame so the dim areas follow the text.
-    let scrollRaf = 0;
-    const onScroll = () => {
-      if (scrollRaf) return;
-      scrollRaf = requestAnimationFrame(() => {
-        scrollRaf = 0;
-        measure();
-        if (still) draw(0);
-      });
-    };
-    window.addEventListener('scroll', onScroll, { passive: true });
-    if (still) {
-      // Reduced motion: the field holds still and the ghost does not fly.
-      nextFlight = Infinity;
-      const redraw = setInterval(() => draw(0), 500);
+      const onResize = () => {
+        resize();
+        draw(0);
+      };
+      window.addEventListener('resize', onResize);
+      // Content moves on navigation and while the widget loads, so the mask is re-read now and then.
+      const poll = setInterval(measure, 500);
+      // Scrolling moves every box at once; re-read on the next frame so the dim areas follow the text.
+      let scrollRaf = 0;
+      const onScroll = () => {
+        if (scrollRaf) return;
+        scrollRaf = requestAnimationFrame(() => {
+          scrollRaf = 0;
+          measure();
+          if (still) draw(0);
+        });
+      };
+      window.addEventListener('scroll', onScroll, { passive: true });
+      if (still) {
+        // Reduced motion: the field holds still and the ghost does not fly.
+        nextFlight = Infinity;
+        const redraw = setInterval(() => draw(0), 500);
+        return () => {
+          clearInterval(poll);
+          clearInterval(redraw);
+          cancelAnimationFrame(scrollRaf);
+          window.removeEventListener('resize', onResize);
+          window.removeEventListener('scroll', onScroll);
+        };
+      }
+
+      let raf = 0;
+      let last = 0;
+      // A frame's cost, smoothed. On a slow phone a frame can take tens of milliseconds, so the gap between
+      // frames stretches to keep the field under about a fifth of the main thread.
+      let cost = 0;
+      const start = performance.now();
+      const loop = (now: number) => {
+        raf = requestAnimationFrame(loop);
+        if (document.hidden || now - last < Math.max(FRAME_MS, cost * 5)) return;
+        last = now;
+        draw((now - start) / 1000);
+        cost = cost * 0.8 + (performance.now() - now) * 0.2;
+      };
+      raf = requestAnimationFrame(loop);
       return () => {
-        clearInterval(poll);
-        clearInterval(redraw);
+        cancelAnimationFrame(raf);
         cancelAnimationFrame(scrollRaf);
+        clearInterval(poll);
         window.removeEventListener('resize', onResize);
         window.removeEventListener('scroll', onScroll);
       };
-    }
-
-    let raf = 0;
-    let last = 0;
-    const start = performance.now();
-    const loop = (now: number) => {
-      raf = requestAnimationFrame(loop);
-      if (document.hidden || now - last < FRAME_MS) return;
-      last = now;
-      draw((now - start) / 1000);
     };
-    raf = requestAnimationFrame(loop);
+
+    // The field is decoration: it starts once the page is idle, so it never holds up the swap box.
+    let stop: (() => void) | undefined;
+    const begin = () => {
+      stop = run();
+    };
+    if ('requestIdleCallback' in window) {
+      const id = requestIdleCallback(begin, { timeout: 2500 });
+      return () => {
+        cancelIdleCallback(id);
+        stop?.();
+      };
+    }
+    const id = setTimeout(begin, 1200);
     return () => {
-      cancelAnimationFrame(raf);
-      cancelAnimationFrame(scrollRaf);
-      clearInterval(poll);
-      window.removeEventListener('resize', onResize);
-      window.removeEventListener('scroll', onScroll);
+      clearTimeout(id);
+      stop?.();
     };
   }, [dot]);
 
