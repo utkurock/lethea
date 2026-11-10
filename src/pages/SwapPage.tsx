@@ -13,6 +13,7 @@ import { linkTo, usePath } from '../lib/router';
 import { DOT } from '../lib/theme';
 import { findToken } from '../lib/tokens';
 import { BuyPage } from './BuyPage';
+import { PayPage } from './PayPage';
 import { TokenPage } from './TokenPage';
 import { FLAGS } from '../features/flags';
 import { useEvmWallet } from '../wallets/evm';
@@ -65,7 +66,8 @@ export default function SwapPage() {
   const isDocs = path === '/docs';
   const token = path.startsWith('/token/') ? findToken(decodeURIComponent(path.slice(7))) : undefined;
   const buy = path.match(/^\/buy\/([^/]+)\/([^/]+)$/)?.slice(1).map(decodeURIComponent);
-  const isSwap = !token && !buy && !isPrivate && !isDocs;
+  const pay = path.match(/^\/pay\/([^/]+)$/)?.[1];
+  const isSwap = !token && !buy && !pay && !isPrivate && !isDocs;
 
   // Phone menu: closes on navigation and on Escape.
   const [menuOpen, setMenuOpen] = useState(false);
@@ -162,8 +164,8 @@ export default function SwapPage() {
         </div>
       )}
 
-      {/* The buy page opens in the extension's small popup window, where the strip would crowd the swap box. */}
-      {!buy && <Ticker />}
+      {/* The buy and pay pages open in the extension's small popup window, where the strip would crowd the swap box. */}
+      {!buy && !pay && <Ticker />}
 
       {isDocs ? (
         <Fence message="This page couldn't load." className="page-crash">
@@ -177,6 +179,8 @@ export default function SwapPage() {
             <PrivatePage onConnect={openStellarPicker} />
           </Suspense>
         </Fence>
+      ) : pay ? (
+        <PayPage handle={decodeURIComponent(pay)} onConnect={openPicker} />
       ) : buy ? (
         <BuyPage chain={buy[0]} symbol={buy[1]} onConnect={openPicker} />
       ) : token ? (
