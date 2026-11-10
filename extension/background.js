@@ -243,9 +243,10 @@ async function openPopup(url) {
   popup = win.id;
 }
 
-function openBuy({ chain, symbol, post }) {
+function openBuy({ chain, symbol, post, warn = [] }) {
   const url = new URL(`/buy/${encodeURIComponent(chain)}/${encodeURIComponent(symbol)}`, LETHEA_URL);
   if (post) url.searchParams.set('post', post);
+  for (const w of warn.slice(0, 3)) url.searchParams.append('warn', w.slice(0, 160));
   return openPopup(url);
 }
 

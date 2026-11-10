@@ -54,7 +54,8 @@
     return node;
   }
 
-  function swapButton(listing, post, label) {
+  /** `warnings` lists the post's red flags when clicked, so the buy page can repeat them. */
+  function swapButton(listing, post, label, warnings) {
     const btn = guard(el('button', 'lethea-swap'));
     btn.type = 'button';
     btn.innerHTML = GHOST;
@@ -63,7 +64,7 @@
     btn.title = `Buy ${listing.symbol} (${where})${listing.price ? ` at ${price(listing.price)}` : ''} from any chain through NEAR Intents`;
     btn.addEventListener('click', (e) => {
       e.preventDefault();
-      void send({ type: 'openBuy', chain: listing.blockchain, symbol: listing.symbol, post });
+      void send({ type: 'openBuy', chain: listing.blockchain, symbol: listing.symbol, post, warn: warnings() });
     });
     return btn;
   }
@@ -99,20 +100,21 @@
 
     const found = (cashtags.length || addresses.length) && (await send({ type: 'lookup', cashtags, addresses }));
 
-    // A Swap button right after each cashtag NEAR Intents lists.
-    for (const a of tagLinks) {
-      const listing = found?.swaps[a.textContent.trim().slice(1).toUpperCase()];
-      if (listing && !a.nextElementSibling?.classList.contains('lethea-swap')) a.after(swapButton(listing, post, 'Swap'));
-    }
-
     // Checks go in a bar under the text, added once there is something to show.
     const bar = guard(el('div', 'lethea-bar'));
     bar.innerHTML = GHOST;
     const show = () => !bar.isConnected && textEl.after(bar);
+    const warnings = () => [...bar.querySelectorAll('.lethea-danger')].map((c) => c.textContent);
+
+    // A Swap button right after each cashtag NEAR Intents lists.
+    for (const a of tagLinks) {
+      const listing = found?.swaps[a.textContent.trim().slice(1).toUpperCase()];
+      if (listing && !a.nextElementSibling?.classList.contains('lethea-swap')) a.after(swapButton(listing, post, 'Swap', warnings));
+    }
 
     for (const { address, listing, impostorOf } of found?.addresses ?? []) {
       if (listing) {
-        bar.append(chip('ok', `${short(address)} is ${listing.symbol} on NEAR Intents`, address), swapButton(listing, post, `Swap ${listing.symbol}`));
+        bar.append(chip('ok', `${short(address)} is ${listing.symbol} on NEAR Intents`, address), swapButton(listing, post, `Swap ${listing.symbol}`, warnings));
       } else if (impostorOf) {
         bar.append(chip('danger', `${short(address)} is not the $${impostorOf} NEAR Intents lists`, `${address}\nThe post names $${impostorOf} but gives a different contract. Swap buttons buy the listed one.`));
       } else {
