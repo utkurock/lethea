@@ -11,6 +11,18 @@
   // a post's text, a quoted post's text and a link card's text are each a div[dir=auto] inside the article.
   const TEXT = '[data-testid="tweetText"], article div[dir="auto"]';
 
+  // Wallets people put in their X name, bio or website, in the order the Pay buttons list them.
+  const WALLETS = [
+    /\b(?:[a-z\d]+[-_])*[a-z\d]+(?:\.(?:[a-z\d]+[-_])*[a-z\d]+)*\.near\b/gi,
+    /\b[a-z\d-]+(?:\.[a-z\d-]+)*\.eth\b/gi,
+    EVM,
+    /\bG[A-Z2-7]{55}\b/g,
+    /\bbc1[ac-hj-np-z02-9]{25,59}\b/g,
+    SOL,
+  ];
+  // First path segments that are X's own pages, not profiles.
+  const NOT_PROFILES = new Set(['home', 'explore', 'search', 'notifications', 'messages', 'i', 'settings', 'compose', 'jobs', 'communities', 'premium', 'lists', 'bookmarks', 'tos', 'privacy', 'login', 'signup', 'logout']);
+
   const GHOST =
     '<svg viewBox="0 0 52 60" aria-hidden="true"><path fill="currentColor" d="M4.16 23.84a21.84 21.84 0 0 1 43.68 0V54q-7.28 8-14.56 0-7.28 8-14.56 0-7.28 8-14.56 0Z"/><ellipse cx="17.7" cy="25.84" rx="4.2" ry="5.4" fill="var(--lethea-eye)"/><ellipse cx="34.3" cy="25.84" rx="4.2" ry="5.4" fill="var(--lethea-eye)"/></svg>';
 
@@ -130,11 +142,77 @@
     }
   }
 
+  /** The wallets in a piece of profile text. Names are case-insensitive, so they are kept lowercase. */
+  function walletsIn(text) {
+    const found = [];
+    for (const re of WALLETS) {
+      for (const m of text.match(re) ?? []) {
+        const w = /\.(near|eth)$/i.test(m) ? m.toLowerCase() : m;
+        if (re === SOL && w.startsWith('bc1')) continue;
+        if (!found.includes(w)) found.push(w);
+      }
+    }
+    return found;
+  }
+
+  /**
+   * On a profile page, a Pay button for each wallet the profile lists. X keeps the header mounted while you
+   * move between profiles, so it is matched to the handle in the address bar every time.
+   */
+  function profileHandle() {
+    // demo.html stands in for a profile page and names the handle on <html>.
+    const demo = document.documentElement.dataset.letheaProfile;
+    if (demo) return demo;
+    const [, handle, sub] = location.pathname.split('/');
+    return /^\w{1,15}$/.test(handle ?? '') && !NOT_PROFILES.has(handle.toLowerCase()) && sub !== 'status' ? handle : undefined;
+  }
+
+  function scanProfile() {
+    const handle = profileHandle();
+    if (!handle) return;
+    // The old build's test ids, else the current build's header: the h1 outside any post. The header is the
+    // smallest block around it that also holds the following count, which every profile shows.
+    const nameEl =
+      document.querySelector('[data-testid="UserName"]') ?? [...document.querySelectorAll('main h1')].find((h) => !h.closest('article'));
+    let head = nameEl;
+    while (head && !head.querySelector('a[href$="/following" i]')) head = head.parentElement;
+    if (!head || !head.innerText.toLowerCase().includes(`@${handle.toLowerCase()}`)) return;
+
+    const old = head.querySelector('.lethea-pay');
+    if (old?.dataset.handle === handle) return;
+    old?.remove();
+
+    const bio =
+      head.querySelector('[data-testid="UserDescription"]') ??
+      [...head.querySelectorAll('div[dir="auto"]')].find((d) => !d.contains(nameEl) && !d.closest('h1, article'));
+    const links = [...head.querySelectorAll('a[href^="http"]')].map((a) => (/^https?:\/\//.test(a.title) ? a.title : a.textContent));
+    const wallets = walletsIn([nameEl.innerText, bio?.innerText ?? '', ...links].join('\n'));
+
+    const bar = guard(el('div', 'lethea-bar lethea-pay'));
+    bar.dataset.handle = handle;
+    bar.innerHTML = GHOST;
+    for (const to of wallets) {
+      const btn = guard(el('button', 'lethea-swap'));
+      btn.type = 'button';
+      btn.innerHTML = GHOST;
+      btn.append(`Pay ${/\.(near|eth)$/.test(to) ? to : short(to)}`);
+      btn.title = `Pay @${handle} at ${to} with any token from any chain. Lethea checks the address before you send.`;
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        void send({ type: 'openPay', handle, to });
+      });
+      bar.append(btn);
+    }
+    if (!wallets.length) bar.append(chip('unknown', `No wallet in @${handle}'s profile`, 'Add a .near or .eth name, or an address, to your bio and people can pay you from any chain.'));
+    (bio ?? nameEl).after(bar);
+  }
+
   // X renders posts as you scroll and recycles their nodes; each text element is read once.
   const seen = new WeakSet();
   let queued = false;
   function scan() {
     queued = false;
+    scanProfile();
     for (const textEl of document.querySelectorAll(TEXT)) {
       if (seen.has(textEl)) continue;
       seen.add(textEl);

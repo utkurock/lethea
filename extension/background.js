@@ -224,28 +224,39 @@ async function scanSites({ hosts, text }) {
 }
 
 // ---------------------------------------------------------------------------------------------------------
-// The buy window. One popup, reused for each Swap click.
+// The Lethea window. One popup, reused for each Swap or Pay click.
 
-let buyWindow;
+let popup;
 
-async function openBuy({ chain, symbol, post }) {
-  const url = new URL(`/buy/${encodeURIComponent(chain)}/${encodeURIComponent(symbol)}`, LETHEA_URL);
-  if (post) url.searchParams.set('post', post);
-  if (buyWindow !== undefined) {
+async function openPopup(url) {
+  if (popup !== undefined) {
     try {
-      const [tab] = await chrome.tabs.query({ windowId: buyWindow });
+      const [tab] = await chrome.tabs.query({ windowId: popup });
       await chrome.tabs.update(tab.id, { url: url.href });
-      await chrome.windows.update(buyWindow, { focused: true });
+      await chrome.windows.update(popup, { focused: true });
       return;
     } catch {
-      buyWindow = undefined; // closed by the user
+      popup = undefined; // closed by the user
     }
   }
   const win = await chrome.windows.create({ url: url.href, type: 'popup', width: 460, height: 780 });
-  buyWindow = win.id;
+  popup = win.id;
 }
 
-const HANDLERS = { lookup, scanToken: ({ address }) => scanToken(address), scanSites, openBuy };
+function openBuy({ chain, symbol, post }) {
+  const url = new URL(`/buy/${encodeURIComponent(chain)}/${encodeURIComponent(symbol)}`, LETHEA_URL);
+  if (post) url.searchParams.set('post', post);
+  return openPopup(url);
+}
+
+/** Pays the wallet a profile lists. The pay page checks the address again before showing the swap box. */
+function openPay({ handle, to }) {
+  const url = new URL(`/pay/${encodeURIComponent(handle)}`, LETHEA_URL);
+  url.searchParams.set('to', to);
+  return openPopup(url);
+}
+
+const HANDLERS = { lookup, scanToken: ({ address }) => scanToken(address), scanSites, openBuy, openPay };
 
 chrome.runtime.onMessage.addListener((msg, _sender, reply) => {
   const handler = HANDLERS[msg?.type];
