@@ -296,6 +296,16 @@ img.plated { background: #fff; padding: 2px; box-sizing: border-box; }
 
 .token-buy { position: sticky; top: 16px; align-self: start; padding-top: 30px; }
 
+/* Buy page: one column, sized for the extension's popup window. */
+.buy-page {
+  flex: 1; display: grid; grid-template-columns: minmax(0, 420px); justify-content: center; align-content: center;
+  padding: clamp(12px, 3vh, 40px) 16px clamp(8px, 2vh, 24px);
+}
+.buy-page h1 { margin: 0; font-size: 20px; font-weight: 500; }
+.buy-page .token-head { margin: 0 0 8px; }
+.buy-note { margin: 0 0 16px; color: var(--ink-3); font-size: 13px; line-height: 1.5; }
+.buy-note a { color: var(--ink); text-decoration: underline; text-underline-offset: 2px; }
+
 @media (max-width: 1100px) {
   .token-page { grid-template-columns: minmax(0, 640px); row-gap: 32px; }
   .token-buy { position: static; padding-top: 0; }

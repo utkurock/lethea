@@ -12,6 +12,7 @@ import { lazyChunk } from '../lib/lazy';
 import { linkTo, usePath } from '../lib/router';
 import { DOT } from '../lib/theme';
 import { findToken } from '../lib/tokens';
+import { BuyPage } from './BuyPage';
 import { TokenPage } from './TokenPage';
 import { FLAGS } from '../features/flags';
 import { useEvmWallet } from '../wallets/evm';
@@ -63,7 +64,8 @@ export default function SwapPage() {
   const isPrivate = FLAGS.spp && path === '/private';
   const isDocs = path === '/docs';
   const token = path.startsWith('/token/') ? findToken(decodeURIComponent(path.slice(7))) : undefined;
-  const isSwap = !token && !isPrivate && !isDocs;
+  const buy = path.match(/^\/buy\/([^/]+)\/([^/]+)$/)?.slice(1).map(decodeURIComponent);
+  const isSwap = !token && !buy && !isPrivate && !isDocs;
 
   // Phone menu: closes on navigation and on Escape.
   const [menuOpen, setMenuOpen] = useState(false);
@@ -88,7 +90,7 @@ export default function SwapPage() {
       <header className="nav">
         <Logo />
         <nav className="links">
-          <a className={token || isPrivate || isDocs ? '' : 'active'} href="/" onClick={linkTo('/')}>
+          <a className={isSwap ? 'active' : ''} href="/" onClick={linkTo('/')}>
             Swap
           </a>
           {FLAGS.spp ? (
@@ -160,7 +162,8 @@ export default function SwapPage() {
         </div>
       )}
 
-      <Ticker />
+      {/* The buy page opens in the extension's small popup window, where the strip would crowd the swap box. */}
+      {!buy && <Ticker />}
 
       {isDocs ? (
         <Fence message="This page couldn't load." className="page-crash">
@@ -174,6 +177,8 @@ export default function SwapPage() {
             <PrivatePage onConnect={openStellarPicker} />
           </Suspense>
         </Fence>
+      ) : buy ? (
+        <BuyPage chain={buy[0]} symbol={buy[1]} onConnect={openPicker} />
       ) : token ? (
         <TokenPage token={token} onConnect={openPicker} />
       ) : (
