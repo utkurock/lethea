@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Lethea for X demo</title>
+    <link rel="stylesheet" href="content.css" />
+    <style>
+      /* Posts marked up the way X renders them, so content.js reads them exactly as it reads x.com. */
+      body { margin: 0; background: #000; color: #e7e9ea; font: 15px/1.4 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+      main { max-width: 600px; margin: 0 auto; border-inline: 1px solid #2f3336; min-height: 100vh; }
+      header { padding: 16px; border-bottom: 1px solid #2f3336; }
+      header h1 { margin: 0 0 4px; font-size: 20px; }
+      header p { margin: 0; color: #71767b; font-size: 14px; }
+      article { display: grid; grid-template-columns: 40px 1fr; gap: 12px; padding: 12px 16px; border-bottom: 1px solid #2f3336; }
+      .avatar { width: 40px; height: 40px; border-radius: 50%; background: #333639; }
+      .who { color: #71767b; }
+      .who b { color: #e7e9ea; }
+      .who a { color: inherit; text-decoration: none; }
+      [data-testid='tweetText'] { margin-top: 2px; white-space: pre-wrap; word-break: break-word; }
+      [data-testid='tweetText'] a { color: #1d9bf0; text-decoration: none; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>Lethea for X</h1>
+        <p>Sample posts marked up like X's. On x.com the extension does the same to your feed.</p>
+      </header>
+
+      <article>
+        <div class="avatar"></div>
+        <div>
+          <div class="who"><b>Chart Ghost</b> @chartghost · <a href="https://x.com/chartghost/status/1001"><time>2h</time></a></div>
+          <div data-testid="tweetText" lang="en"><span>Weekly close above the range on </span><a href="/search?q=%24ETH&amp;src=cashtag_click">$ETH</a><span>. Rotating some </span><a href="/search?q=%24ZEC&amp;src=cashtag_click">$ZEC</a><span> into it.</span></div>
+        </div>
+      </article>
+
+      <article>
+        <div class="avatar"></div>
+        <div>
+          <div class="who"><b>Pepe Official 🐸</b> @pepe_coin_eth · <a href="https://x.com/pepe_coin_eth/status/1002"><time>14m</time></a></div>
+          <div data-testid="tweetText" lang="en"><span>V2 migration is live! Swap your </span><a href="/search?q=%24PEPE&amp;src=cashtag_click">$PEPE</a><span> to the new contract before the snapshot.
+CA: 0x6982508145454ce325ddbe47a25d4ec3d2311934</span></div>
+        </div>
+      </article>
+
+      <article>
+        <div class="avatar"></div>
+        <div>
+          <div class="who"><b>Onchain Desk</b> @onchaindesk · <a href="https://x.com/onchaindesk/status/1003"><time>1h</time></a></div>
+          <div data-testid="tweetText" lang="en"><a href="/search?q=%24PEPE&amp;src=cashtag_click">$PEPE</a><span> volume up 40% on the week. Real contract for anyone asking: 0x6982508145454ce325ddbe47a25d4ec3d2311933</span></div>
+        </div>
+      </article>
+
+      <article>
+        <div class="avatar"></div>
+        <div>
+          <div class="who"><b>Base Degen</b> @basedegen · <a href="https://x.com/basedegen/status/1004"><time>3h</time></a></div>
+          <div data-testid="tweetText" lang="en"><span>Still early on this one, not on any CEX yet. 0x4ed4E862860beD51a9570b96d89aF5E1B0Efefed</span></div>
+        </div>
+      </article>
+
+      <article>
+        <div class="avatar"></div>
+        <div>
+          <div class="who"><b>Uniswap Labs Support</b> @uniswap_supp0rt · <a href="https://x.com/uniswap_supp0rt/status/1005"><time>5m</time></a></div>
+          <div data-testid="tweetText" lang="en"><span>🦄 The UNI season 2 airdrop is live. Connect your wallet to claim your allocation: </span><a href="https://t.co/demo1" rel="noopener noreferrer nofollow" target="_blank"><span>https://</span>uniswap-rewards.xyz/claim</a></div>
+        </div>
+      </article>
+
+      <article>
+        <div class="avatar"></div>
+        <div>
+          <div class="who"><b>Airdrop Hunter</b> @drophunter · <a href="https://x.com/drophunter/status/1006"><time>6h</time></a></div>
+          <div data-testid="tweetText" lang="en"><span>Free mint ends tonight, eligibility checker here 👉 </span><a href="https://t.co/demo2" rel="noopener noreferrer nofollow" target="_blank"><span>https://</span>mint-pass-checker.io<span>…</span></a></div>
+        </div>
+      </article>
+    </main>
+    <script src="content.js"></script>
+  </body>
+</html>
