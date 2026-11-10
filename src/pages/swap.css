@@ -310,7 +310,8 @@ img.plated { background: #fff; padding: 2px; box-sizing: border-box; }
 .payee dd { display: grid; gap: 2px; margin: 0; }
 .payee code { font-size: 13px; overflow-wrap: anywhere; }
 .payee code + code { color: var(--ink-3); font-size: 12px; }
-.buy-problem { margin: 0; padding: 12px 14px; border-radius: 12px; background: var(--surface-3); color: var(--down); font-size: 14px; }
+.buy-problem { margin: 0 0 16px; padding: 12px 14px; border-radius: 12px; background: var(--surface-3); color: var(--down); font-size: 13px; line-height: 1.5; }
+.buy-problem ul { margin: 4px 0; padding-left: 18px; }
 
 @media (max-width: 1100px) {
   .token-page { grid-template-columns: minmax(0, 640px); row-gap: 32px; }

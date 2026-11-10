@@ -23,6 +23,13 @@ const postLink = () => {
   }
 };
 
+// Red flags the extension saw on the post. Anyone can add these to a link, but all they can do is warn.
+const postWarnings = () =>
+  new URLSearchParams(window.location.search)
+    .getAll('warn')
+    .slice(0, 3)
+    .map((w) => w.slice(0, 160));
+
 /**
  * `/buy/:chain/:symbol`, what the Lethea extension for X opens when a post names a token NEAR Intents
  * lists. One column so it fits the extension's popup window: the token, the post it came from, and a
@@ -34,6 +41,7 @@ export function BuyPage({ chain, symbol, onConnect }: Props) {
   const listing = list.find((t) => t.blockchain === chain && t.symbol.toLowerCase() === symbol.toLowerCase());
   const chainLabel = CHAINS_LIST[chain as Chains]?.label ?? chain;
   const post = postLink();
+  const warnings = postWarnings();
   // Logos for the long tail of tokens come from other hosts and sometimes fail; fall back to the letter.
   const [broken, setBroken] = useState(false);
   const icon = broken ? undefined : iconFor(listing?.symbol ?? symbol);
@@ -77,6 +85,17 @@ export function BuyPage({ chain, symbol, onConnect }: Props) {
           </>
         )}
       </p>
+      {warnings.length > 0 && (
+        <div className="buy-problem" role="alert">
+          The post you came from was flagged:
+          <ul>
+            {warnings.map((w) => (
+              <li key={w}>{w}</li>
+            ))}
+          </ul>
+          The swap below buys the {listing?.symbol ?? symbol} NEAR Intents lists, not anything the post links to.
+        </div>
+      )}
       <div id="swap-root">
         {listing ? (
           <SwapSlot onConnect={onConnect} target={{ symbol: listing.symbol, blockchain: listing.blockchain as Chains }} />
