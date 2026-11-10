@@ -8,6 +8,8 @@ Lethea is a cross-chain swap app with a privacy option. You pay from one chain, 
 
 The app is a static React site. It has no backend and stores no user data. Every request goes from the browser straight to the service it needs.
 
+**Lethea for X** is a Chrome extension that brings the same swaps into your X feed. It adds a Swap button next to cashtags, checks the contract addresses and links in posts for scams, and adds a Pay button to profiles that list a wallet. See [Lethea for X](#lethea-for-x).
+
 ![Swap page with the ticker, the swap box and the ghost in the dithered background](docs/media/swap.png)
 
 ## What it does
@@ -51,6 +53,48 @@ The price strip at the top links to `/token/:symbol`. Each page shows the live p
 | Token page | Docs |
 | --- | --- |
 | ![ETH token page with price, weekly chart and a swap box targeting ETH](docs/media/token.png) | ![Docs page with the section list on the left](docs/media/docs.png) |
+
+## Lethea for X
+
+![Lethea for X on sample posts: Swap buttons on cashtags, a Pay button on a profile, and checks under posts with contract addresses and links](docs/media/x-extension.png)
+
+The extension in [`extension/`](extension) reads posts as X renders them and adds three things.
+
+**Swap on cashtags.** A Swap button appears next to every cashtag that NEAR Intents lists, such as `$ETH`, `$ZEC` or `$PEPE`. It opens `lethea.xyz/buy/<chain>/<symbol>` in a small popup with the token already selected, and you can pay from any chain Lethea supports, Bitcoin, Zcash and XRP included. When a symbol is listed on several chains, the native asset wins. The button always buys the asset NEAR Intents lists, never an address written in the post.
+
+**Scam checks under posts.** These show up under any post that has a contract address or an outside link:
+
+| Check | How |
+| --- | --- |
+| A contract posing as a listed token | The post names `$PEPE`, but its address is not the PEPE contract NEAR Intents lists |
+| A contract NEAR Intents lists | Marked as the listed token, with its own Swap button |
+| Any other EVM or Solana contract | [GoPlus](https://gopluslabs.io) token security: honeypots, sell limits, high taxes, hidden owners, mint and freeze authority, holder count |
+| Look-alike domains | A domain that names a brand without being one of its domains, such as `uniswap-rewards.xyz`, or one that uses punycode |
+| Known phishing sites | GoPlus's phishing list |
+| Airdrop and claim bait | A post that talks about airdrops, claims or connecting a wallet and links to an unknown site |
+
+If you press Swap on a post that has a red flag, the buy page repeats the warning above the swap box.
+
+**Pay on profiles.** On a profile page, the extension looks for a `.near` or `.eth` name, or an EVM, Solana, Stellar or Bitcoin address, in the name, bio and website. It adds a Pay button under the bio for each one. The button opens `lethea.xyz/pay/<handle>?to=<address>`, where you pay with any token from any chain and the payee receives on their own chain. Confidential mode keeps the route between the two chains private. The pay page does not trust the link. It resolves ENS names, checks that NEAR accounts exist, and asks you to compare the address with the profile, since anyone can write a pay link.
+
+### Install
+
+1. Open `chrome://extensions` and turn on Developer mode.
+2. Click **Load unpacked** and choose the `extension` folder.
+3. Open x.com. Clicking the extension's toolbar icon opens a demo page with a sample profile and posts, so you can try it without an X account.
+
+The Swap and Pay buttons open `https://lethea.xyz`. To point them at a local `npm run dev`, change `LETHEA_URL` at the top of [`extension/background.js`](extension/background.js) to `http://localhost:5173`.
+
+### What it sends where
+
+The extension has no server and keeps nothing on disk. It fetches the NEAR Intents token list, sends contract addresses and link domains from posts you scroll past to GoPlus, and opens Lethea with the token or payee in the URL. It reads both of X's current page builds: the older one with `data-testid` attributes and the late-2026 one without them.
+
+### Limits
+
+- Swap buttons only appear for tokens NEAR Intents lists, about 90 on the chains Lethea routes to. New memecoins get a GoPlus check but no button.
+- GoPlus's free tier is rate limited, so the extension checks one address at a time and keeps the results while the browser is open.
+- The scam checks are heuristics. A green check means NEAR Intents lists the contract, not that the token is a good buy.
+- Pay only works for profiles that list a wallet. Paying any X handle, with funds held until the owner claims them, is future work.
 
 ## Wallets
 
@@ -99,7 +143,7 @@ npm run lint      # oxlint
 
 The build is plain static files. Two things matter on the host:
 
-1. The router uses the History API, so `/token/*`, `/docs` and `/private` need an SPA rewrite to `index.html`.
+1. The router uses the History API, so `/token/*`, `/buy/*`, `/pay/*`, `/docs` and `/private` need an SPA rewrite to `index.html`.
 2. `public/spp/` has to be served as is. The Private Send SDK loads its JS, WASM, proving key and workers from there at runtime, outside the bundler.
 
 ## Project layout
@@ -108,15 +152,16 @@ The build is plain static files. Two things matter on the host:
 src/
   main.tsx              loads polyfills, then imports bootstrap.tsx
   bootstrap.tsx         wallet providers and the app root
-  pages/                SwapPage (shell and routes), TokenPage, PrivatePage, DocsPage, swap.css
+  pages/                SwapPage (shell and routes), TokenPage, BuyPage, PayPage, PrivatePage, DocsPage, swap.css
   components/           SwapBox, WalletPicker, Ticker, PriceChart, DitherField (animated background)
-  intents/              widget configuration: chains, defaults, signers
+  intents/              widget configuration (chains.ts holds the chain lists), defaults, signers
   wallets/              one provider and hook per chain
   spp/client.ts         Private Send SDK loader and session
   lib/                  router, token list, swap history, theme, formatting
 public/
   fonts/                Jeko
   spp/                  vendored Stellar Private Payments SDK and testnet deployments.json
+extension/              Lethea for X: manifest, background.js (network), content.js (page), demo.html
 brand/                  logo source images and make-logo.py
 docs/media/             README screenshots and the ghost GIF
 ```
@@ -130,4 +175,19 @@ docs/media/             README screenshots and the ghost GIF
 
 ## Status
 
-Swaps run on mainnet. Private Send is a testnet preview built on unaudited contracts, so do not use it with real funds.
+Swaps run on mainnet. NEAR Intents has no testnet, so the extension's Swap and Pay buttons lead to real mainnet swaps. Private Send is a testnet preview built on unaudited contracts, so do not use it with real funds.
+
+## NEAR HACKATHON
+
+Lethea for X was built for [NEAR HACKATHON](https://nearhackathon.com) (1 to 14 November 2026), for the Unstoppable DeFi track.
+
+Lethea itself existed before the hackathon. The swap site, wallets, token pages and Private Send were built in September and October 2026, and the `pre-hackathon` tag marks where that work ends. Everything after it, on the `near-hackathon` branch, was built during the hackathon: [compare `pre-hackathon` with `near-hackathon`](https://github.com/utkurock/lethea/compare/pre-hackathon...near-hackathon).
+
+New in the hackathon window:
+
+- The Lethea for X extension: Swap buttons on cashtags, the scam checks, and Pay buttons on profiles
+- `/buy/:chain/:symbol` and `/pay/:handle` on the site, sized for the extension's popup
+- A fixed-recipient mode for the swap box, used by the pay page
+- A fix for the background canvas in windows that open at zero size
+
+Services and libraries the new work uses: the NEAR Intents 1Click token list, Aurora's Intents Swap Widget (already in Lethea), the GoPlus Security API, FastNEAR's public RPC for NEAR account checks, and wagmi/viem for ENS names. None of them is a template; the extension is plain JavaScript with no build step.
