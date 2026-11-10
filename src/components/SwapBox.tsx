@@ -9,6 +9,7 @@ import {
 import i18n from 'i18next';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { DEPOSIT_CHAINS } from '../intents/chains';
+import { pct, type AppFee } from '../intents/fees';
 import { useIntentsConfig } from '../intents/useIntentsConfig';
 import { WIDGET_THEME } from '../lib/theme';
 import { useEvmWallet } from '../wallets/evm';
@@ -19,7 +20,7 @@ import { useStellarWallet } from '../wallets/stellar';
 type Pick = { symbol: string; blockchain: Chains };
 /** A fixed payee: the payout goes to `address`, and the target token may only be on `chains`. */
 export type Recipient = { address: string; chains: Chains[] };
-type Props = { onConnect: () => void; target?: Pick; recipient?: Recipient };
+type Props = { onConnect: () => void; target?: Pick; recipient?: Recipient; fees?: AppFee[] };
 
 // Paid with when the page's token is the default source itself (the ETH page), where the widget would
 // otherwise drop the target for being the same token and leave nothing to buy.
@@ -34,7 +35,7 @@ const same = (a?: Pick, b?: Pick) => !!a && !!b && a.symbol === b.symbol && a.bl
  * is on for chains no wallet can sign on (Bitcoin and co.), available but off once a wallet for
  * the source chain is connected, and otherwise one click away for people who prefer it.
  */
-export default function SwapBox({ onConnect, target: targetProp, recipient: recipientProp }: Props) {
+export default function SwapBox({ onConnect, target: targetProp, recipient: recipientProp, fees: feesProp }: Props) {
   const config = useIntentsConfig(onConnect);
   // Callers pass a fresh object each render; a changing default would keep resetting the widget.
   const target = useMemo(
@@ -48,6 +49,9 @@ export default function SwapBox({ onConnect, target: targetProp, recipient: reci
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [recipientProp?.address, recipientChains],
   );
+  const feesKey = JSON.stringify(feesProp ?? []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const fees = useMemo(() => (feesProp?.length ? feesProp : undefined), [feesKey]);
   const evm = useEvmWallet();
   const xlm = useStellarWallet();
   const sol = useSolanaWallet();
@@ -96,6 +100,9 @@ export default function SwapBox({ onConnect, target: targetProp, recipient: reci
   // Its `localisation` prop never overwrites a key once set, so write to the shared i18next instance
   // directly and re-emit the language to make the widget re-render.
   const destChain = dest ? CHAINS.find((c) => c.id === dest.blockchain)?.label : undefined;
+  // App fees are named in the quote details, on the widget's own fee line, not on the page. That line's
+  // figure leaves them out (it reads the same with and without them), so the label says they come on top.
+  const feeLabel = fees ? `Fees (+${fees.map((f) => `${pct(f.fee)} to ${f.recipient}`).join(', ')})` : 'Fees';
   useEffect(() => {
     i18n.addResourceBundle(
       'en',
@@ -104,12 +111,13 @@ export default function SwapBox({ onConnect, target: targetProp, recipient: reci
         'sendAddress.label': destChain ? `Receive on ${destChain}` : 'Receive in',
         'wallet.recipient.placeholder': destChain ? `Enter ${destChain} address` : 'Enter recipient wallet address',
         'submit.disabled.enterRecipientAddress': destChain ? `Enter ${destChain} address` : 'Enter recipient address',
+        'quote.result.fees.label': feeLabel,
       },
       true,
       true,
     );
     void i18n.changeLanguage('en');
-  }, [destChain]);
+  }, [destChain, feeLabel]);
 
   const widgetConfig = useMemo(
     () => ({
@@ -121,8 +129,9 @@ export default function SwapBox({ onConnect, target: targetProp, recipient: reci
       ...(target ? { defaultTargetToken: target } : {}),
       // A payee's address is only valid on its own chain family, so the target can't move off it.
       ...(recipient ? { allowedTargetChainsList: recipient.chains } : {}),
+      ...(fees ? { appFees: fees } : {}),
     }),
-    [config, allow, defaultSource, target, autoRecipient, recipient],
+    [config, allow, defaultSource, target, autoRecipient, recipient, fees],
   );
 
   return (

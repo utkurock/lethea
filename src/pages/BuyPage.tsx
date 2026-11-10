@@ -3,7 +3,9 @@ import { useState } from 'react';
 import { CHAINS_LIST } from '@aurora-is-near/intents-swap-widget/constants';
 import { SwapSlot } from '../components/SwapSlot';
 import { CHAINS } from '../intents/chains';
+import { postFees } from '../intents/fees';
 import { short } from '../lib/format';
+import { isNearName, useNearAccount } from '../lib/near';
 import { linkTo } from '../lib/router';
 import { fmtUsd, iconFor, platedIcon, useIntentsTokens } from '../lib/tokens';
 
@@ -30,6 +32,13 @@ const postWarnings = () =>
     .slice(0, 3)
     .map((w) => w.slice(0, 160));
 
+// The post's author's .near account, read by the extension from their X name. It only earns a share once
+// the account is confirmed to exist.
+const creatorParam = () => {
+  const c = new URLSearchParams(window.location.search).get('creator')?.toLowerCase();
+  return c && isNearName(c) ? c : undefined;
+};
+
 /**
  * `/buy/:chain/:symbol`, what the Lethea extension for X opens when a post names a token NEAR Intents
  * lists. One column so it fits the extension's popup window: the token, the post it came from, and a
@@ -42,6 +51,11 @@ export function BuyPage({ chain, symbol, onConnect }: Props) {
   const chainLabel = CHAINS_LIST[chain as Chains]?.label ?? chain;
   const post = postLink();
   const warnings = postWarnings();
+  const creatorName = creatorParam();
+  const creatorState = useNearAccount(creatorName);
+  const creator = creatorState === 'ok' ? creatorName : undefined;
+  // Hold the swap box until the author check settles, so the quote doesn't change under the user.
+  const feesReady = !creatorName || creatorState !== 'checking';
   // Logos for the long tail of tokens come from other hosts and sometimes fail; fall back to the letter.
   const [broken, setBroken] = useState(false);
   const icon = broken ? undefined : iconFor(listing?.symbol ?? symbol);
@@ -97,8 +111,12 @@ export function BuyPage({ chain, symbol, onConnect }: Props) {
         </div>
       )}
       <div id="swap-root">
-        {listing ? (
-          <SwapSlot onConnect={onConnect} target={{ symbol: listing.symbol, blockchain: listing.blockchain as Chains }} />
+        {listing && feesReady ? (
+          <SwapSlot
+            onConnect={onConnect}
+            target={{ symbol: listing.symbol, blockchain: listing.blockchain as Chains }}
+            fees={postFees(creator)}
+          />
         ) : (
           <div className="swap-loading" aria-busy="true">
             <span />
