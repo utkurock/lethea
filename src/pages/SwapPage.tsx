@@ -27,6 +27,15 @@ const PayPage = lazyChunk(() => import('./PayPage').then((m) => ({ default: m.Pa
 
 const missingKey = !import.meta.env.VITE_INTENTS_API_KEY;
 
+// A malformed escape in the address bar would otherwise throw while the page renders and blank it.
+const decode = (s: string) => {
+  try {
+    return decodeURIComponent(s);
+  } catch {
+    return s;
+  }
+};
+
 function Logo() {
   return (
     <a className="logo" href="/" onClick={linkTo('/')} aria-label="Lethea">
@@ -64,8 +73,8 @@ export default function SwapPage() {
   const path = usePath();
   const isPrivate = FLAGS.spp && path === '/private';
   const isDocs = path === '/docs';
-  const token = path.startsWith('/token/') ? findToken(decodeURIComponent(path.slice(7))) : undefined;
-  const buy = path.match(/^\/buy\/([^/]+)\/([^/]+)$/)?.slice(1).map(decodeURIComponent);
+  const token = path.startsWith('/token/') ? findToken(decode(path.slice(7))) : undefined;
+  const buy = path.match(/^\/buy\/([^/]+)\/([^/]+)$/)?.slice(1).map(decode);
   const pay = path.match(/^\/pay\/([^/]+)$/)?.[1];
   const isSwap = !token && !buy && !pay && !isPrivate && !isDocs;
 
@@ -183,7 +192,7 @@ export default function SwapPage() {
         <Fence message="This page couldn't load." className="page-crash">
           <Suspense fallback={null}>
             {pay ? (
-              <PayPage handle={decodeURIComponent(pay)} onConnect={openPicker} />
+              <PayPage handle={decode(pay)} onConnect={openPicker} />
             ) : (
               buy && <BuyPage chain={buy[0]} symbol={buy[1]} onConnect={openPicker} />
             )}
