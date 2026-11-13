@@ -5,12 +5,11 @@ import { useEnsAddress } from 'wagmi';
 import { mainnet } from 'wagmi/chains';
 import { SwapSlot } from '../components/SwapSlot';
 import { isNearName, useNearAccount } from '../lib/near';
+import { EVM_CHAINS, useEvmPayee, useSolanaPayee } from '../lib/payee';
 import { linkTo } from '../lib/router';
 
 type Props = { handle: string; onConnect: () => void };
 type Pick = { symbol: string; blockchain: Chains };
-
-const EVM_CHAINS: Chains[] = ['base', 'eth', 'arb', 'op', 'pol', 'bsc', 'avax'];
 
 /** Where an address can be paid, and the token a payment lands as by default. */
 type Payee = { name: string; kind: 'near' | 'ens' | 'evm' | 'sol' | 'stellar' | 'btc'; chains: Chains[]; asset: Pick };
@@ -48,6 +47,9 @@ export function PayPage({ handle, onConnect }: Props) {
   const ensNormal = payee?.kind === 'ens' ? ensName(payee.name) : undefined;
   const ens = useEnsAddress({ name: ensNormal, chainId: mainnet.id, query: { enabled: !!ensNormal } });
   const near = useNearAccount(payee?.kind === 'near' ? payee.name : undefined);
+  const evmAddress = payee?.kind === 'ens' ? (ens.data ?? undefined) : payee?.kind === 'evm' ? payee.name : undefined;
+  const evm = useEvmPayee(evmAddress);
+  const sol = useSolanaPayee(payee?.kind === 'sol' ? payee.name : undefined);
 
   if (!payee) {
     return (
@@ -63,20 +65,30 @@ export function PayPage({ handle, onConnect }: Props) {
     );
   }
 
-  const address = payee.kind === 'ens' ? (ens.data ?? undefined) : payee.kind === 'near' && near !== 'ok' ? undefined : payee.name;
+  // The address once it has been checked: it exists (NEAR), resolves (ENS), and is not a token contract.
+  const checked =
+    payee.kind === 'near'
+      ? near === 'ok'
+      : payee.kind === 'ens' || payee.kind === 'evm'
+        ? !!evmAddress && evm?.state === 'ok'
+        : payee.kind === 'sol'
+          ? sol === 'ok'
+          : true;
+  const address = checked ? (evmAddress ?? payee.name) : undefined;
+  // A contract wallet can only be paid on the chains it is deployed on.
+  const chains = evm?.state === 'ok' ? payee.chains.filter((c) => evm.chains.includes(c)) : payee.chains;
+  const asset = chains.includes(payee.asset.blockchain) ? payee.asset : { ...payee.asset, blockchain: chains[0] };
   const problem =
-    payee.kind === 'ens'
-      ? !ensNormal || ens.isError || (ens.isSuccess && !ens.data)
-        ? `${payee.name} does not point to an address.`
-        : undefined
-      : payee.kind === 'near'
-        ? near === 'missing'
-          ? `${payee.name} does not exist on NEAR.`
-          : near === 'error'
-            ? `Could not check ${payee.name} on NEAR. Try again in a moment.`
-            : undefined
-        : undefined;
-  const chainLabel = payee.chains.length > 1 ? 'any EVM chain' : CHAINS_LIST[payee.chains[0]]?.label;
+    payee.kind === 'ens' && (!ensNormal || ens.isError || (ens.isSuccess && !ens.data))
+      ? `${payee.name} does not point to an address.`
+      : payee.kind === 'near' && near === 'missing'
+        ? `${payee.name} does not exist on NEAR.`
+        : evm?.state === 'token' || sol === 'token'
+          ? 'This address is a token contract, not a wallet. A payment sent to it cannot be recovered.'
+          : near === 'error' || evm?.state === 'error' || sol === 'error' || (evm?.state === 'ok' && !chains.length)
+            ? 'Could not check this address. Try again in a moment.'
+            : undefined;
+  const chainLabel = chains.length > 1 ? 'any EVM chain' : CHAINS_LIST[chains[0]]?.label;
   const profile = `https://x.com/${handle}`;
 
   return (
@@ -98,12 +110,12 @@ export function PayPage({ handle, onConnect }: Props) {
       </dl>
 
       <p className="buy-note">
-        The Lethea extension found this address on{' '}
+        Anyone can make a pay link, so Lethea cannot tell who sent you this one. Open{' '}
         <a href={profile} target="_blank" rel="noreferrer">
           @{handle}'s profile
-        </a>
-        . Anyone can make a pay link, so check that it matches before you send. Pay with any token from any chain, and
-        turn on Confidential to keep the route between the two chains private.
+        </a>{' '}
+        and check that it lists this address before you send. Pay with any token from any chain, and turn on
+        Confidential to keep the route between the two chains private.
       </p>
 
       {problem ? (
@@ -113,7 +125,7 @@ export function PayPage({ handle, onConnect }: Props) {
       ) : (
         <div id="swap-root">
           {address ? (
-            <SwapSlot onConnect={onConnect} target={payee.asset} recipient={{ address, chains: payee.chains }} />
+            <SwapSlot onConnect={onConnect} target={asset} recipient={{ address, chains }} />
           ) : (
             <div className="swap-loading" aria-busy="true">
               <span />
