@@ -155,9 +155,14 @@
   /**
    * The .near account in the name of the post's author. The author is the nearest name link above the
    * text, so a quoted post gets its own author; links inside the text are mentions, not the author.
+   * A quoted post is a card inside the outer post (a role=link block in the older build, a status block
+   * nested in another in the current one). Its author is looked for inside the card only, so a quote
+   * whose author can't be read credits no one rather than the person quoting it.
    */
   function creatorOf(textEl) {
-    const stop = textEl.closest('article');
+    const status = textEl.closest('[data-href*="/status/"]');
+    const nested = status?.parentElement?.closest('[data-href*="/status/"]') ? status : null;
+    const stop = textEl.closest('article [role="link"]') ?? nested ?? textEl.closest('article');
     for (let node = textEl.parentElement; node; node = node.parentElement) {
       const name =
         node.querySelector('[data-testid="User-Name"] a')?.innerText ??
