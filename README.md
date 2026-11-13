@@ -81,7 +81,7 @@ If you press Swap on a post that has a red flag, the buy page repeats the warnin
 
 ### Install
 
-1. Download `lethea-for-x-v0.1.0.zip` from the [latest release](https://github.com/utkurock/lethea/releases/latest) and unzip it. If you cloned the repo, use the `extension` folder instead.
+1. Download the `lethea-for-x` zip from the [latest release](https://github.com/utkurock/lethea/releases/latest) and unzip it. If you cloned the repo, use the `extension` folder instead.
 2. Open `chrome://extensions` and turn on Developer mode.
 3. Click **Load unpacked** and choose the unzipped `lethea-for-x` folder (or `extension`).
 4. Open x.com. Clicking the extension's toolbar icon opens a demo page with a sample profile and posts, so you can try it without an X account.
