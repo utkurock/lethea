@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Lethea for X",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Swap buttons on cashtags and scam checks on contract addresses and links, in your X feed. Settles through NEAR Intents.",
   "icons": { "16": "icons/icon-16.png", "48": "icons/icon-48.png", "128": "icons/icon-128.png" },
   "action": { "default_title": "Lethea for X: open the demo page" },
