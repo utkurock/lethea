@@ -170,11 +170,13 @@
     return undefined;
   }
 
-  function chip(risk, text, title) {
+  /** `warn` is a code the buy page turns back into its own wording; a link can't carry free text there. */
+  function chip(risk, text, title, warn) {
     const c = el('span', `lethea-chip lethea-${risk}`);
     c.innerHTML = ICONS[risk] ?? '';
     c.append(el('span', null, text));
     if (title) c.title = title;
+    if (warn && risk === 'danger') c.dataset.warn = warn;
     return c;
   }
 
@@ -216,7 +218,7 @@
     // Checks go in a bar under the text, added once there is something to show.
     const row = bar();
     const show = () => !row.isConnected && textEl.after(row);
-    const from = { post, creator: creatorOf(textEl), warnings: () => [...row.querySelectorAll('.lethea-danger')].map((c) => c.textContent) };
+    const from = { post, creator: creatorOf(textEl), warnings: () => [...row.querySelectorAll('[data-warn]')].map((c) => c.dataset.warn) };
 
     // A Swap button right after each cashtag NEAR Intents lists.
     for (const a of tagLinks) {
@@ -228,7 +230,7 @@
       if (listing) {
         row.append(chip('ok', `${short(address)} is ${listing.symbol} on NEAR Intents`, address), swapButton(listing, `Swap ${listing.symbol}`, from));
       } else if (impostorOf) {
-        row.append(chip('danger', `${short(address)} is not the $${impostorOf} NEAR Intents lists`, `${address}\nThe post names $${impostorOf} but gives a different contract. Swap buttons buy the listed one.`));
+        row.append(chip('danger', `${short(address)} is not the $${impostorOf} NEAR Intents lists`, `${address}\nThe post names $${impostorOf} but gives a different contract. Swap buttons buy the listed one.`, `impostor:${address}:${impostorOf}`));
       } else {
         const pending = chip('wait', `Checking ${short(address)}…`, address);
         row.append(pending);
@@ -241,7 +243,7 @@
               : v.risk === 'ok'
                 ? `${name}: no red flags`
                 : `${name}: ${v.flags.slice(0, 2).join(' · ')}${v.flags.length > 2 ? ` +${v.flags.length - 2}` : ''}`;
-          pending.replaceWith(chip(v.risk, text, `${address}${v.chain ? ` on ${v.chain}` : ''}\n${v.flags?.join('\n') ?? ''}\nSource: GoPlus Security`));
+          pending.replaceWith(chip(v.risk, text, `${address}${v.chain ? ` on ${v.chain}` : ''}\n${v.flags?.join('\n') ?? ''}\nSource: GoPlus Security`, `token:${address}`));
         });
       }
       show();
@@ -250,7 +252,7 @@
     if (hosts.length) {
       const sites = await send({ type: 'scanSites', hosts, text });
       for (const s of sites ?? []) {
-        row.append(chip(s.risk, s.note, s.host));
+        row.append(chip(s.risk, s.note, s.host, s.warn));
         show();
       }
     }

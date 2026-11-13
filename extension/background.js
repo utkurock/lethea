@@ -277,17 +277,17 @@ async function scanSites({ hosts, text }) {
     const labels = host.split(/[.-]/);
     const brand = Object.keys(BRANDS).find((b) => labels.includes(b));
     if (brand) {
-      out.push({ host, risk: 'danger', note: `${host} is not a ${brand[0].toUpperCase() + brand.slice(1)} domain` });
+      out.push({ host, risk: 'danger', note: `${host} is not a ${brand[0].toUpperCase() + brand.slice(1)} domain`, warn: `brand:${host}:${brand}` });
       continue;
     }
     if (host.split('.').some((l) => l.startsWith('xn--'))) {
-      out.push({ host, risk: 'danger', note: `${host} uses look-alike characters` });
+      out.push({ host, risk: 'danger', note: `${host} uses look-alike characters`, warn: `lookalike:${host}` });
       continue;
     }
     const listed = await remember(`site:${host}`, () =>
       goplus(`phishing_site?url=${encodeURIComponent(host)}`).then((r) => on(r?.phishing_site)),
     ).catch(() => false);
-    if (listed) out.push({ host, risk: 'danger', note: `${host} is a reported phishing site` });
+    if (listed) out.push({ host, risk: 'danger', note: `${host} is a reported phishing site`, warn: `phishing:${host}` });
     else if (bait) out.push({ host, risk: 'caution', note: `Claim post linking to ${host}. Check it before you connect a wallet` });
   }
   return out;

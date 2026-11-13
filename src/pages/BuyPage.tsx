@@ -25,12 +25,27 @@ const postLink = () => {
   }
 };
 
-// Red flags the extension saw on the post. Anyone can add these to a link, but all they can do is warn.
-const postWarnings = () =>
-  new URLSearchParams(window.location.search)
-    .getAll('warn')
-    .slice(0, 3)
-    .map((w) => w.slice(0, 160));
+// Red flags the extension saw on the post, as codes this page words itself. Anyone can add them to a link,
+// so a code only fills a domain, an address or a symbol into a fixed sentence and never shows free text.
+const HOST = /^(?=.{1,253}$)[a-z\d-]+(\.[a-z\d-]+)+$/;
+const ADDRESS = /^(0x[a-fA-F\d]{40}|[1-9A-HJ-NP-Za-km-z]{32,44})$/;
+const warningText = (code: string) => {
+  const [kind, a = '', b = ''] = code.split(':');
+  if (kind === 'brand' && HOST.test(a) && /^[a-z]{2,20}$/.test(b)) return `${a} is not a ${b[0].toUpperCase()}${b.slice(1)} domain`;
+  if (kind === 'lookalike' && HOST.test(a)) return `${a} uses look-alike characters`;
+  if (kind === 'phishing' && HOST.test(a)) return `${a} is a reported phishing site`;
+  if (kind === 'impostor' && ADDRESS.test(a) && /^[A-Z][A-Z\d]{0,11}$/.test(b)) return `${short(a)} is not the $${b} NEAR Intents lists`;
+  if (kind === 'token' && ADDRESS.test(a)) return `GoPlus flags the token at ${short(a)} as dangerous`;
+  return undefined;
+};
+const postWarnings = () => [
+  ...new Set(
+    new URLSearchParams(window.location.search)
+      .getAll('warn')
+      .slice(0, 3)
+      .flatMap((w) => warningText(w) ?? []),
+  ),
+];
 
 // The post's author's .near account, read by the extension from their X name. It only earns a share once
 // the account is confirmed to exist.
