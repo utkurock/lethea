@@ -248,12 +248,12 @@ const verdict = (chain, symbol, danger, caution) => ({
 function scanToken(address) {
   return remember(`token:${address}`, async () => {
     if (!address.startsWith('0x')) {
-      const res = await goplus(`solana/token_security?contract_addresses=${address}`);
+      const res = await goplus(`solana/token_security?contract_addresses=${encodeURIComponent(address)}`);
       const d = res?.[address];
       return d ? solVerdict(d) : { risk: 'unknown' };
     }
     for (const [chain, id] of GOPLUS_EVM) {
-      const res = await goplus(`token_security/${id}?contract_addresses=${address}`);
+      const res = await goplus(`token_security/${id}?contract_addresses=${encodeURIComponent(address)}`);
       const d = res?.[address.toLowerCase()];
       if (d && Object.keys(d).length) return evmVerdict(chain, d);
     }
