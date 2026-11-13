@@ -331,7 +331,7 @@ function openPay({ handle, to }) {
 const HANDLERS = { lookup, quotes, scanToken: ({ address }) => scanToken(address), scanSites, openBuy, openPay };
 
 chrome.runtime.onMessage.addListener((msg, _sender, reply) => {
-  const handler = HANDLERS[msg?.type];
+  const handler = Object.hasOwn(HANDLERS, msg?.type) ? HANDLERS[msg.type] : undefined;
   if (!handler) return false;
   Promise.resolve(handler(msg))
     .then((data) => reply({ ok: true, data }))

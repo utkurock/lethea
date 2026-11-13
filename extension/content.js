@@ -292,20 +292,30 @@
       document.querySelector('[data-testid="UserName"]') ?? [...document.querySelectorAll('main h1')].find((h) => !h.closest('article'));
     let head = nameEl;
     while (head && !head.querySelector('a[href$="/following" i]')) head = head.parentElement;
-    if (!head || !head.innerText.toLowerCase().includes(`@${handle.toLowerCase()}`)) return;
-
-    const old = head.querySelector('.lethea-pay');
-    if (old?.dataset.handle === handle) return;
-    old?.remove();
+    if (!head) return;
 
     const bio =
       head.querySelector('[data-testid="UserDescription"]') ??
       [...head.querySelectorAll('div[dir="auto"]')].find((d) => !d.contains(nameEl) && !d.closest('h1, article'));
+    // While X swaps one profile for the next, the header can still be the previous profile's. Only a header
+    // that shows exactly this @handle, outside the bio (where anyone can write one), belongs to the address bar.
+    const at = `@${handle.toLowerCase()}`;
+    const shown = [...head.querySelectorAll('span, div')].some(
+      (n) => !n.childElementCount && !bio?.contains(n) && n.textContent.trim().toLowerCase() === at,
+    );
+    if (!shown) return head.querySelector('.lethea-pay')?.remove();
+
     const links = [...head.querySelectorAll('a[href^="http"]')].map((a) => (/^https?:\/\//.test(a.title) ? a.title : a.textContent));
     const wallets = walletsIn([nameEl.innerText, bio?.innerText ?? '', ...links].join('\n'));
 
+    // Rebuilt whenever the handle or the wallets change, so no button outlives the profile it was read from.
+    const key = [handle, ...wallets].join('\n');
+    const old = head.querySelector('.lethea-pay');
+    if (old?.dataset.key === key) return;
+    old?.remove();
+
     const row = bar('lethea-pay');
-    row.dataset.handle = handle;
+    row.dataset.key = key;
     for (const to of wallets) {
       const btn = button('lethea-paybtn', 'Pay');
       btn.append(el('span', 'lethea-to', /\.(near|eth)$/.test(to) ? to : short(to)));
