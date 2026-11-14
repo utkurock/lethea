@@ -404,3 +404,8 @@ chrome.runtime.onMessage.addListener((msg, _sender, reply) => {
     .catch((err) => reply({ ok: false, error: String(err?.message ?? err) }));
   return true; // reply comes later
 });
+
+// The demo page opens once, right after a fresh install, as the extension's welcome. Updates don't reopen it.
+chrome.runtime.onInstalled.addListener(({ reason }) => {
+  if (reason === 'install') void chrome.tabs.create({ url: chrome.runtime.getURL('demo.html') });
+});

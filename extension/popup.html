@@ -6,23 +6,35 @@
     <link rel="stylesheet" href="brand.css" />
     <style>
       body { width: 340px; }
-      header { display: flex; align-items: center; gap: 8px; padding: 16px 16px 14px; border-bottom: 1px solid var(--line); }
+      header { display: flex; align-items: center; gap: 8px; padding: 16px 16px 12px; }
       header .logo { font-size: 16px; }
       header small { color: var(--ink-4); font-size: 11px; font-weight: 500; margin-left: 2px; }
       .status { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; border-radius: 999px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--line); color: var(--ink-3); font-size: 11px; font-weight: 500; }
       .status i { width: 6px; height: 6px; border-radius: 50%; background: var(--up); box-shadow: 0 0 0 3px rgb(34 197 94 / 0.16); }
-      main { padding: 14px 16px 4px; }
+
+      /* Tabs, the way a wallet popup splits its home and its activity. */
+      nav { display: grid; grid-template-columns: 1fr 1fr; margin: 0 16px; border-bottom: 1px solid var(--line); }
+      nav button { position: relative; height: 38px; border: 0; background: none; color: var(--ink-3); font: 500 13px var(--font); cursor: pointer; }
+      nav button:hover { color: var(--ink-2); }
+      nav button.on { color: var(--ink); }
+      nav button.on::after { content: ''; position: absolute; left: 24%; right: 24%; bottom: -1px; height: 2px; border-radius: 2px; background: var(--accent); }
+      nav b { display: inline-grid; place-items: center; min-width: 18px; height: 18px; margin-left: 6px; padding: 0 5px; border-radius: 999px; background: var(--surface-3); color: var(--ink-2); font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; vertical-align: 1px; }
+      nav b:empty { display: none; }
+
+      main { padding: 14px 16px 4px; min-height: 270px; }
+      [hidden] { display: none !important; }
       .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
       .stat { padding: 12px 14px; border-radius: 16px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--line); }
       .stat b { display: block; font-size: 26px; line-height: 1.1; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
       .stat span { color: var(--ink-3); font-size: 12px; }
       .stat.warn b { color: #fca5a5; }
-      .tokens { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
-      .tokens:empty { display: none; }
+      h2 { margin: 16px 0 8px; color: var(--ink-4); font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
+      .tokens { display: flex; flex-wrap: wrap; gap: 6px; }
       .tokens span { height: 24px; padding: 0 10px; border-radius: 999px; background: var(--surface-2); color: var(--ink-2); font-size: 12px; font-weight: 500; display: inline-flex; align-items: center; }
-      h2 { margin: 18px 0 6px; color: var(--ink-4); font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
+      .hint { margin: 0; color: var(--ink-4); font-size: 12px; }
+
       ul { list-style: none; margin: 0; padding: 0; }
-      li { display: grid; grid-template-columns: 8px 1fr auto; gap: 10px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--line); }
+      li { display: grid; grid-template-columns: 8px 1fr auto; gap: 10px; align-items: center; padding: 9px 0; border-bottom: 1px solid var(--line); }
       li:last-child { border-bottom: 0; }
       li i { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
       li.danger i { background: var(--down); }
@@ -31,10 +43,12 @@
       li span { color: var(--ink-2); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
       li time { color: var(--ink-4); font-size: 11px; white-space: nowrap; font-variant-numeric: tabular-nums; }
       .empty { margin: 0; padding: 14px; border-radius: 16px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--line); color: var(--ink-3); font-size: 13px; }
-      .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 14px 16px 12px; }
-      footer { display: flex; justify-content: space-between; align-items: center; padding: 0 16px 14px; color: var(--ink-4); font-size: 11px; }
+
+      footer { display: flex; justify-content: space-between; align-items: center; gap: 12px; white-space: nowrap; padding: 12px 16px 14px; border-top: 1px solid var(--line); color: var(--ink-4); font-size: 11px; }
+      footer a { color: var(--ink-3); font-weight: 500; }
+      footer a:hover, footer button:hover { color: var(--ink); }
       footer button { padding: 0; border: 0; background: none; color: var(--ink-3); font: 500 11px var(--font); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
-      footer button:hover { color: var(--ink); }
+      footer .right { display: inline-flex; gap: 14px; align-items: center; }
     </style>
   </head>
   <body>
@@ -50,22 +64,30 @@
       </span>
       <span class="status"><i></i>Active on x.com</span>
     </header>
+
+    <nav role="tablist">
+      <button role="tab" id="tab-overview" class="on" aria-selected="true" aria-controls="overview">Overview</button>
+      <button role="tab" id="tab-activity" aria-selected="false" aria-controls="activity">Activity<b id="activityCount"></b></button>
+    </nav>
+
     <main>
-      <div class="stats">
-        <div class="stat"><b id="tokens">0</b><span>Tokens spotted</span></div>
-        <div class="stat"><b id="posts">0</b><span>Posts checked</span></div>
-        <div class="stat warn"><b id="flags">0</b><span>Scams flagged</span></div>
-        <div class="stat"><b id="opened">0</b><span>Swaps and pays</span></div>
-      </div>
-      <div class="tokens" id="tokenList"></div>
-      <h2>Recent activity</h2>
-      <div id="activity"></div>
+      <section id="overview" role="tabpanel" aria-labelledby="tab-overview">
+        <div class="stats">
+          <div class="stat"><b id="tokens">0</b><span>Tokens spotted</span></div>
+          <div class="stat"><b id="posts">0</b><span>Posts checked</span></div>
+          <div class="stat warn"><b id="flags">0</b><span>Scams flagged</span></div>
+          <div class="stat"><b id="opened">0</b><span>Swaps and pays</span></div>
+        </div>
+        <h2>Tokens you've seen</h2>
+        <div class="tokens" id="tokenList"></div>
+      </section>
+      <section id="activity" role="tabpanel" aria-labelledby="tab-activity" hidden></section>
     </main>
-    <div class="actions">
-      <a class="btn primary" href="demo.html" target="_blank">Open the demo</a>
-      <a class="btn" href="https://lethea.xyz/extension" target="_blank" rel="noreferrer">lethea.xyz</a>
-    </div>
-    <footer><span id="since">Counts stay in this browser.</span><button id="reset" type="button">Reset</button></footer>
+
+    <footer>
+      <span id="since">Kept in this browser only</span>
+      <span class="right"><button id="reset" type="button">Reset</button><a href="https://lethea.xyz/extension" target="_blank" rel="noreferrer">lethea.xyz ↗</a></span>
+    </footer>
     <script src="popup.js"></script>
   </body>
 </html>

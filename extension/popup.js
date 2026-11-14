@@ -1,7 +1,19 @@
 // The toolbar popup: what Lethea has done in this browser, read from the counts background.js keeps.
+// Two tabs, like a wallet: Overview for the totals, Activity for the latest events.
 
 const $ = (id) => document.getElementById(id);
 $('version').textContent = ` ${chrome.runtime.getManifest().version}`;
+
+const TABS = ['overview', 'activity'];
+function show(name) {
+  for (const t of TABS) {
+    const on = t === name;
+    $(`tab-${t}`).classList.toggle('on', on);
+    $(`tab-${t}`).setAttribute('aria-selected', String(on));
+    $(t).hidden = !on;
+  }
+}
+for (const t of TABS) $(`tab-${t}`).addEventListener('click', () => show(t));
 
 function ago(at) {
   const s = Math.max(0, Math.round((Date.now() - at) / 1000));
@@ -11,6 +23,13 @@ function ago(at) {
   return `${Math.round(s / 86400)}d ago`;
 }
 
+function empty(text) {
+  const p = document.createElement('p');
+  p.className = 'empty';
+  p.textContent = text;
+  return p;
+}
+
 function render(s) {
   const fmt = (n) => (n ?? 0).toLocaleString('en-US');
   $('tokens').textContent = fmt(s?.tokens?.length);
@@ -18,38 +37,45 @@ function render(s) {
   $('flags').textContent = fmt(s?.flags);
   $('opened').textContent = fmt((s?.swaps ?? 0) + (s?.pays ?? 0));
 
-  const tokens = (s?.tokens ?? []).slice(-12).reverse();
-  $('tokenList').replaceChildren(
-    ...tokens.map((t) => {
-      const chip = document.createElement('span');
-      chip.textContent = `$${t}`;
-      return chip;
-    }),
-  );
-
-  const items = s?.recent ?? [];
-  if (!items.length) {
-    const empty = document.createElement('p');
-    empty.className = 'empty';
-    empty.textContent = 'Open x.com and scroll. Lethea adds Swap buttons to cashtags and checks contracts and links as posts load.';
-    $('activity').replaceChildren(empty);
+  const tokens = (s?.tokens ?? []).slice(-15).reverse();
+  if (tokens.length) {
+    $('tokenList').replaceChildren(
+      ...tokens.map((t) => {
+        const chip = document.createElement('span');
+        chip.textContent = `$${t}`;
+        return chip;
+      }),
+    );
   } else {
-    const list = document.createElement('ul');
-    for (const it of items.slice(0, 6)) {
-      const li = document.createElement('li');
-      li.className = it.kind;
-      const dot = document.createElement('i');
-      const text = document.createElement('span');
-      text.textContent = it.text;
-      text.title = it.text;
-      const time = document.createElement('time');
-      time.textContent = ago(it.at);
-      li.append(dot, text, time);
-      list.append(li);
-    }
-    $('activity').replaceChildren(list);
+    const hint = document.createElement('p');
+    hint.className = 'hint';
+    hint.textContent = 'Cashtags NEAR Intents lists show up here as you scroll x.com.';
+    $('tokenList').replaceChildren(hint);
   }
-  $('since').textContent = s?.since ? `Since ${new Date(s.since).toLocaleDateString()}. Stays in this browser.` : 'Counts stay in this browser.';
+
+  $('since').textContent = s?.since
+    ? `Kept in this browser since ${new Date(s.since).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
+    : 'Kept in this browser only';
+  const items = s?.recent ?? [];
+  $('activityCount').textContent = items.length ? String(items.length) : '';
+  if (!items.length) {
+    $('activity').replaceChildren(empty('Nothing yet. Flags, swaps and payments land here as they happen on x.com.'));
+    return;
+  }
+  const list = document.createElement('ul');
+  for (const it of items) {
+    const li = document.createElement('li');
+    li.className = it.kind;
+    const dot = document.createElement('i');
+    const text = document.createElement('span');
+    text.textContent = it.text;
+    text.title = it.text;
+    const time = document.createElement('time');
+    time.textContent = ago(it.at);
+    li.append(dot, text, time);
+    list.append(li);
+  }
+  $('activity').replaceChildren(list);
 }
 
 chrome.storage.local.get('stats').then(({ stats }) => render(stats));

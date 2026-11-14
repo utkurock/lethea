@@ -7,7 +7,7 @@ import { fmtUsd, type IntentsToken, useIntentsTokens } from '../lib/tokens';
 // The page for Lethea for X. Its post mock-ups use the extension's own stylesheet, so the buttons and flags
 // here are the ones it draws on x.com, and the prices and quotes in them are live NEAR Intents figures.
 
-const VERSION = '0.1.4';
+const VERSION = '0.1.5';
 const ZIP = `https://github.com/utkurock/lethea/releases/download/v${VERSION}/lethea-for-x-v${VERSION}.zip`;
 const RELEASES = 'https://github.com/utkurock/lethea/releases';
 
@@ -277,7 +277,7 @@ export function ExtensionPage() {
               Click <b>Load unpacked</b> and pick the <code>lethea-for-x</code> folder.
             </li>
             <li>
-              Open x.com. The toolbar icon shows your activity, and its demo page works without an X account.
+              A demo page opens once to show you around. Then open x.com; the toolbar icon keeps your activity.
             </li>
           </ol>
           <p className="xp-fine">
