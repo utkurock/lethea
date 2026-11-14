@@ -4,7 +4,7 @@ import { SwapSlot } from '../components/SwapSlot';
 import { short } from '../lib/format';
 import { RANGES, usePerpStats, useHistory, type Range } from '../lib/history';
 import { linkTo } from '../lib/router';
-import { fmtCompact, fmtUsd, iconFor, platedIcon, priceOf, useIntentsTokens, type TokenInfo } from '../lib/tokens';
+import { fmtCompact, fmtUsd, iconFor, priceOf, useIntentsTokens, type TokenInfo } from '../lib/tokens';
 
 const RANGE_LABEL: Record<Range, string> = {
   '1D': 'Past day',
@@ -46,7 +46,7 @@ export function TokenPage({ token, onConnect }: Props) {
         </a>
 
         <div className="token-head">
-          {icon ? <img src={icon} alt="" className={platedIcon(token.symbol) ? 'plated' : undefined} /> : <span className="mono">{token.symbol[0]}</span>}
+          {icon ? <img src={icon} alt="" /> : <span className="mono">{token.symbol[0]}</span>}
           <div>
             <h1>{token.name}</h1>
             <span>

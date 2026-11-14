@@ -1,5 +1,5 @@
 import { linkTo } from '../lib/router';
-import { TOKENS, fmtUsd, iconFor, platedIcon, priceOf, useIntentsTokens } from '../lib/tokens';
+import { TOKENS, fmtUsd, iconFor, priceOf, useIntentsTokens } from '../lib/tokens';
 
 export function Ticker() {
   const list = useIntentsTokens();
@@ -20,7 +20,7 @@ export function Ticker() {
         onClick={linkTo(`/token/${r.symbol}`)}
         tabIndex={copy ? -1 : undefined}
       >
-        {r.icon ? <img src={r.icon} alt="" className={platedIcon(r.symbol) ? 'plated' : undefined} /> : <span className="mono">{r.symbol[0]}</span>}
+        {r.icon ? <img src={r.icon} alt="" /> : <span className="mono">{r.symbol[0]}</span>}
         <b>{r.symbol}</b>
         <span className="price">${fmtUsd(r.price)}</span>
       </a>

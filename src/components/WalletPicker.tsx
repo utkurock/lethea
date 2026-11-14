@@ -21,7 +21,7 @@ const LOGO: Record<ChainId, string> = { evm: 'ETH', xlm: 'XLM', sol: 'SOL', near
 export function ChainLogo({ chain, size = 20 }: { chain: ChainId; size?: number }) {
   const src = iconFor(LOGO[chain]);
   return src ? (
-    <img className={`chain-logo ${chain === 'xlm' ? 'plated' : ''}`} src={src} alt="" width={size} height={size} />
+    <img className="chain-logo" src={src} alt="" width={size} height={size} />
   ) : null;
 }
 

@@ -7,7 +7,7 @@ import { postFees } from '../intents/fees';
 import { short } from '../lib/format';
 import { isNearName, useNearAccount } from '../lib/near';
 import { linkTo } from '../lib/router';
-import { fmtUsd, iconFor, platedIcon, useIntentsTokens } from '../lib/tokens';
+import { fmtUsd, iconFor, useIntentsTokens } from '../lib/tokens';
 
 type Props = { chain: string; symbol: string; onConnect: () => void };
 
@@ -92,7 +92,7 @@ export function BuyPage({ chain, symbol, onConnect }: Props) {
   return (
     <main className="buy-page">
       <div className="token-head">
-        {icon ? <img src={icon} alt="" className={platedIcon(symbol) ? 'plated' : undefined} onError={() => setBroken(true)} /> : <span className="mono">{symbol[0]}</span>}
+        {icon ? <img src={icon} alt="" onError={() => setBroken(true)} /> : <span className="mono">{symbol[0]}</span>}
         <div>
           <h1>Buy {listing?.symbol ?? symbol}</h1>
           <span>

@@ -44,16 +44,13 @@ export const TOKENS: TokenInfo[] = [
 export const findToken = (symbol: string) =>
   TOKENS.find((t) => t.symbol.toLowerCase() === symbol.toLowerCase());
 
-const EXTRA_ICONS: Record<string, string> = {
-  xlm: 'https://s2.coinmarketcap.com/static/img/coins/128x128/512.png',
-};
-
-// Logos drawn in black on a transparent ground; they need a light plate on our dark page.
-export const platedIcon = (symbol: string) => symbol.toLowerCase() === 'xlm';
+// Served from public/icons. The widget's own list points these at CoinMarketCap's image host, which some
+// networks and browser shields block, leaving blank icons. (Its XLM entry is LINK's logo besides.)
+const LOCAL_ICONS = new Set(['aave', 'cbbtc', 'link', 'pepe', 'uni', 'usdc', 'usdt', 'xlm']);
 
 export const iconFor = (symbol: string) => {
   const key = symbol.toLowerCase();
-  return EXTRA_ICONS[key] ?? TOKENS_DATA[key]?.icon;
+  return LOCAL_ICONS.has(key) ? `/icons/${key}.png` : TOKENS_DATA[key]?.icon;
 };
 
 // One shared poll of the NEAR Intents token list, used by the ticker and the token pages.
