@@ -3,40 +3,110 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Lethea for X demo</title>
+    <title>Lethea for X</title>
+    <link rel="icon" href="icons/icon-48.png" />
     <link rel="stylesheet" href="content.css" />
     <style>
-      /* Posts marked up the way X renders them, so content.js reads them exactly as it reads x.com. */
-      body { margin: 0; background: #000; color: #e7e9ea; font: 15px/1.4 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
-      main { max-width: 600px; margin: 0 auto; border-inline: 1px solid #2f3336; min-height: 100vh; }
-      header { padding: 16px; border-bottom: 1px solid #2f3336; }
-      header h2 { margin: 0 0 4px; font-size: 20px; }
-      .profile { padding: 16px; border-bottom: 1px solid #2f3336; }
-      .profile .avatar { width: 72px; height: 72px; }
-      .profile h1 { margin: 12px 0 0; font-size: 20px; }
-      .profile .handle, .profile .counts { color: #71767b; }
+      :root { --bg: #0c0c0e; --card: #16171a; --line: rgb(255 255 255 / 0.08); --ink: #f5f5f6; --ink-2: #cfd1d6; --ink-3: #9ea1a8; --ink-4: #6f727a; --x-line: #2f3336; --x-muted: #71767b; --x-blue: #1d9bf0; }
+      * { box-sizing: border-box; }
+      html { scroll-behavior: smooth; }
+      body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+      body::before { content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none; background-image: radial-gradient(rgb(201 206 214 / 0.16) 1px, transparent 1.3px); background-size: 9px 9px; -webkit-mask-image: radial-gradient(ellipse 70% 55% at 50% 0%, #000 0, transparent 75%); mask-image: radial-gradient(ellipse 70% 55% at 50% 0%, #000 0, transparent 75%); }
+      a { color: inherit; }
+      .wrap { max-width: 1040px; margin: 0 auto; padding: 0 24px; }
+
+      /* Landing */
+      .top { display: flex; align-items: center; gap: 10px; padding: 22px 0; }
+      .top svg { width: 22px; height: 26px; }
+      .top b { font-size: 17px; letter-spacing: 0.01em; }
+      .top nav { margin-left: auto; display: flex; gap: 22px; color: var(--ink-3); font-size: 14px; }
+      .top nav a { text-decoration: none; }
+      .top nav a:hover { color: var(--ink); }
+      .hero { text-align: center; padding: 64px 0 40px; }
+      .eyebrow { display: inline-flex; align-items: center; gap: 8px; padding: 5px 12px; border-radius: 999px; border: 1px solid var(--line); background: rgb(22 23 26 / 0.8); color: var(--ink-3); font-size: 12.5px; }
+      .eyebrow i { width: 7px; height: 7px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 0 3px rgb(34 197 94 / 0.15); }
+      .title { margin: 20px auto 0; max-width: 760px; font-size: clamp(38px, 6vw, 64px); line-height: 1.02; font-weight: 700; letter-spacing: -0.035em; }
+      .title span { display: block; color: var(--ink-3); }
+      .lede { margin: 18px auto 0; max-width: 600px; color: var(--ink-3); font-size: 17px; }
+      .cta { margin-top: 28px; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+      .btn { display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 20px; border-radius: 999px; font-weight: 600; text-decoration: none; border: 1px solid var(--line); background: var(--card); }
+      .btn.primary { border-color: rgb(0 0 0 / 0.14); background: linear-gradient(180deg, #eef0f3, #c9ced6); color: #0c0c0e; box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.6), 0 1px 2px rgb(0 0 0 / 0.22); }
+      .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; padding: 24px 0 8px; }
+      .feature { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 20px; }
+      .feature .k { font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-4); }
+      .feature b { display: block; margin-top: 8px; font-size: 17px; }
+      .feature p { margin: 6px 0 0; color: var(--ink-3); font-size: 14px; }
+      .try { padding: 56px 0 24px; text-align: center; }
+      .try .k { color: var(--ink-4); font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+      .try .t { margin-top: 8px; font-size: 28px; font-weight: 700; letter-spacing: -0.02em; }
+      .try p { margin: 8px auto 0; max-width: 560px; color: var(--ink-3); }
+
+      /* The sample timeline: marked up the way X renders posts, so content.js reads it exactly as it reads x.com. */
+      main { max-width: 600px; margin: 0 auto 24px; background: #000; color: #e7e9ea; border: 1px solid var(--x-line); border-radius: 20px; overflow: hidden; box-shadow: 0 40px 120px rgb(0 0 0 / 0.6); }
+      .bar-x { display: flex; align-items: center; gap: 8px; height: 44px; padding: 0 16px; border-bottom: 1px solid var(--x-line); color: var(--x-muted); font-size: 13px; }
+      .bar-x i { width: 10px; height: 10px; border-radius: 50%; background: #3a3b41; }
+      .bar-x span { margin-left: 10px; }
+      .banner { height: 120px; background: radial-gradient(circle at 70% 40%, #2a2c33 0, #0c0c0e 70%); position: relative; }
+      .banner::before { content: ''; position: absolute; inset: 0; background-image: radial-gradient(#5a5e66 1px, transparent 1.4px); background-size: 7px 7px; opacity: 0.5; -webkit-mask-image: radial-gradient(circle at 70% 40%, #000 0, transparent 70%); mask-image: radial-gradient(circle at 70% 40%, #000 0, transparent 70%); }
+      .profile { padding: 0 16px 16px; border-bottom: 1px solid var(--x-line); }
+      .profile .avatar { width: 84px; height: 84px; margin-top: -42px; border: 4px solid #000; position: relative; }
+      .profile h1 { margin: 10px 0 0; font-size: 20px; line-height: 24px; }
+      .profile .handle, .profile .counts { color: var(--x-muted); }
       .profile [dir='auto'] { margin: 12px 0; }
       .profile .counts a { color: inherit; text-decoration: none; }
       .profile .counts b { color: #e7e9ea; }
-      header p { margin: 0; color: #71767b; font-size: 14px; }
-      article { display: grid; grid-template-columns: 40px 1fr; gap: 12px; padding: 12px 16px; border-bottom: 1px solid #2f3336; }
-      .avatar { width: 40px; height: 40px; border-radius: 50%; background: #333639; }
-      .who { color: #71767b; }
+      article { display: grid; grid-template-columns: 40px 1fr; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--x-line); }
+      article:last-child { border-bottom: 0; }
+      .avatar { width: 40px; height: 40px; border-radius: 50%; background: #333639; display: grid; place-items: center; font-size: 20px; overflow: hidden; }
+      .avatar img { width: 100%; height: 100%; object-fit: cover; }
+      .who { color: var(--x-muted); }
       .who b { color: #e7e9ea; }
       .who a { color: inherit; text-decoration: none; }
+      .badge { width: 16px; height: 16px; vertical-align: -3px; margin-left: 2px; }
       [data-testid='tweetText'] { margin-top: 2px; white-space: pre-wrap; word-break: break-word; }
-      [data-testid='tweetText'] a { color: #1d9bf0; text-decoration: none; }
+      [data-testid='tweetText'] a { color: var(--x-blue); text-decoration: none; }
+      .acts { display: flex; gap: 48px; margin-top: 10px; color: var(--x-muted); font-size: 13px; }
+
+      footer { padding: 32px 0 48px; color: var(--ink-4); font-size: 13px; display: flex; justify-content: center; gap: 18px; flex-wrap: wrap; }
+      footer a { color: var(--ink-3); text-decoration: none; }
     </style>
   </head>
   <body>
-    <main>
-      <header>
-        <h2>Lethea for X</h2>
-        <p>A sample profile and posts marked up like X's. On x.com the extension does the same to your feed.</p>
-      </header>
+    <div class="wrap">
+      <div class="top">
+        <svg viewBox="0 0 52 60" aria-hidden="true"><path fill="#c9ced6" d="M4.16 23.84a21.84 21.84 0 0 1 43.68 0V54q-7.28 8-14.56 0-7.28 8-14.56 0-7.28 8-14.56 0Z" /><ellipse cx="17.7" cy="25.84" rx="4.2" ry="5.4" fill="#0c0c0e" /><ellipse cx="34.3" cy="25.84" rx="4.2" ry="5.4" fill="#0c0c0e" /></svg>
+        <b>Lethea for X</b>
+        <nav><a href="#try">Demo</a><a href="https://lethea.xyz" target="_blank" rel="noreferrer">lethea.xyz</a><a href="https://github.com/utkurock/lethea" target="_blank" rel="noreferrer">GitHub</a></nav>
+      </div>
 
+      <section class="hero">
+        <span class="eyebrow"><i></i>Installed and running</span>
+        <div class="title">See a coin on X. <span>Buy it right there.</span></div>
+        <p class="lede">Lethea puts a Swap button on every cashtag, checks the contracts and links in posts for scams, and adds a Pay button to profiles. Swaps settle across chains through NEAR Intents, privately if you want.</p>
+        <div class="cta">
+          <a class="btn primary" href="https://x.com/home" target="_blank" rel="noreferrer">Open X</a>
+          <a class="btn" href="#try">Try it on this page</a>
+        </div>
+      </section>
+
+      <section class="features">
+        <div class="feature"><span class="k">Swap</span><b>Buttons on cashtags</b><p>Live price on the button, live quotes on hover. One click opens a small Lethea window to pay from any chain, Bitcoin and Zcash included.</p></div>
+        <div class="feature"><span class="k">Check</span><b>Scam flags under posts</b><p>Contracts that impersonate a listed token, mintable or honeypot tokens, and links posing as a brand get flagged before you click.</p></div>
+        <div class="feature"><span class="k">Pay</span><b>Pay any profile</b><p>Profiles that list a .near name or a wallet get a Pay button. Lethea checks the address on chain before the swap box appears.</p></div>
+      </section>
+
+      <section class="try" id="try">
+        <div class="k">Try it</div>
+        <div class="t">A profile and posts, marked up like X</div>
+        <p>The extension reads this page exactly as it reads x.com. Hover a Swap button, click one, or click Pay.</p>
+      </section>
+    </div>
+
+    <main>
+      <div class="bar-x"><i></i><i></i><i></i><span>x.com/lethea</span></div>
+      <div class="banner"></div>
       <section class="profile">
-        <a href="/lethea/photo"><div class="avatar"></div></a>
+        <a href="/lethea/photo"><div class="avatar"><img src="icons/icon-128.png" alt="" /></div></a>
         <h1>Lethea 👻</h1>
         <div class="handle">@lethea</div>
         <div dir="auto"><span>Cross-chain swaps through NEAR Intents. Tips welcome at lethea.near, paid from any chain.</span></div>
@@ -44,54 +114,67 @@
       </section>
 
       <article>
-        <div class="avatar"></div>
+        <div class="avatar"><img src="icons/icon-128.png" alt="" /></div>
         <div>
           <div class="who"><a href="/lethea_calls"><b>Lethea Calls · lethea.near</b></a> @lethea_calls · <a href="https://x.com/lethea_calls/status/1001"><time>2h</time></a></div>
           <div data-testid="tweetText" lang="en"><span>Weekly close above the range on </span><a href="/search?q=%24ETH&amp;src=cashtag_click">$ETH</a><span>. Rotating some </span><a href="/search?q=%24ZEC&amp;src=cashtag_click">$ZEC</a><span> into it.</span></div>
+          <div class="acts"><span>48 replies</span><span>112 reposts</span><span>1.2K likes</span></div>
         </div>
       </article>
 
       <article>
-        <div class="avatar"></div>
+        <div class="avatar" style="background:#2f7d32">🐸</div>
         <div>
-          <div class="who"><b>Pepe Official 🐸</b> @pepe_coin_eth · <a href="https://x.com/pepe_coin_eth/status/1002"><time>14m</time></a></div>
+          <div class="who"><b>Pepe Official 🐸</b><svg class="badge" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#1d9bf0" /><path d="m7.8 12.3 2.8 2.8 5.6-5.8" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" /></svg> @pepe_coin_eth · <a href="https://x.com/pepe_coin_eth/status/1002"><time>14m</time></a></div>
           <div data-testid="tweetText" lang="en"><span>V2 migration is live! Swap your </span><a href="/search?q=%24PEPE&amp;src=cashtag_click">$PEPE</a><span> to the new contract before the snapshot.
 CA: 0x6982508145454ce325ddbe47a25d4ec3d2311934</span></div>
+          <div class="acts"><span>2.1K replies</span><span>640 reposts</span><span>3.8K likes</span></div>
         </div>
       </article>
 
       <article>
-        <div class="avatar"></div>
+        <div class="avatar" style="background:#0f766e">📈</div>
         <div>
           <div class="who"><b>Onchain Desk</b> @onchaindesk · <a href="https://x.com/onchaindesk/status/1003"><time>1h</time></a></div>
           <div data-testid="tweetText" lang="en"><a href="/search?q=%24PEPE&amp;src=cashtag_click">$PEPE</a><span> volume up 40% on the week. Real contract for anyone asking: 0x6982508145454ce325ddbe47a25d4ec3d2311933</span></div>
+          <div class="acts"><span>64 replies</span><span>120 reposts</span><span>880 likes</span></div>
         </div>
       </article>
 
       <article>
-        <div class="avatar"></div>
+        <div class="avatar" style="background:#4338ca">🔵</div>
         <div>
           <div class="who"><b>Base Degen</b> @basedegen · <a href="https://x.com/basedegen/status/1004"><time>3h</time></a></div>
           <div data-testid="tweetText" lang="en"><span>Still early on this one, not on any CEX yet. 0x4ed4E862860beD51a9570b96d89aF5E1B0Efefed</span></div>
+          <div class="acts"><span>27 replies</span><span>14 reposts</span><span>160 likes</span></div>
         </div>
       </article>
 
       <article>
-        <div class="avatar"></div>
+        <div class="avatar" style="background:#fce7f3">🦄</div>
         <div>
-          <div class="who"><b>Uniswap Labs Support</b> @uniswap_supp0rt · <a href="https://x.com/uniswap_supp0rt/status/1005"><time>5m</time></a></div>
+          <div class="who"><b>Uniswap Labs Support</b><svg class="badge" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#e8b52e" /><path d="m7.8 12.3 2.8 2.8 5.6-5.8" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" /></svg> @uniswap_supp0rt · <a href="https://x.com/uniswap_supp0rt/status/1005"><time>5m</time></a></div>
           <div data-testid="tweetText" lang="en"><span>🦄 The UNI season 2 airdrop is live. Connect your wallet to claim your allocation: </span><a href="https://t.co/demo1" rel="noopener noreferrer nofollow" target="_blank"><span>https://</span>uniswap-rewards.xyz/claim</a></div>
+          <div class="acts"><span>311 replies</span><span>95 reposts</span><span>1.4K likes</span></div>
         </div>
       </article>
 
       <article>
-        <div class="avatar"></div>
+        <div class="avatar" style="background:#7c2d12">🎁</div>
         <div>
           <div class="who"><b>Airdrop Hunter</b> @drophunter · <a href="https://x.com/drophunter/status/1006"><time>6h</time></a></div>
           <div data-testid="tweetText" lang="en"><span>Free mint ends tonight, eligibility checker here 👉 </span><a href="https://t.co/demo2" rel="noopener noreferrer nofollow" target="_blank"><span>https://</span>mint-pass-checker.io<span>…</span></a></div>
+          <div class="acts"><span>9 replies</span><span>40 reposts</span><span>210 likes</span></div>
         </div>
       </article>
     </main>
+
+    <footer class="wrap">
+      <span>Built at NEAR HACKATHON</span>
+      <span>Settles through <a href="https://near-intents.org" target="_blank" rel="noreferrer">NEAR Intents</a></span>
+      <a href="https://lethea.xyz" target="_blank" rel="noreferrer">lethea.xyz</a>
+      <a href="https://github.com/utkurock/lethea" target="_blank" rel="noreferrer">GitHub</a>
+    </footer>
     <script src="content.js"></script>
   </body>
 </html>
