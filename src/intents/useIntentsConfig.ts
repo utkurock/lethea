@@ -67,8 +67,10 @@ export function useIntentsConfig(openWalletPicker: () => void): Partial<WidgetCo
       topChainShortcuts: () => SHORTCUTS,
       // Native ETH on Ethereum, not the NEAR-bridged one the widget picks by default.
       defaultSourceToken: { symbol: 'ETH', blockchain: 'eth' },
-      // The widget only fills the target itself when it picked the source too.
-      defaultTargetToken: { symbol: 'USDC', blockchain: 'stellar' },
+      // The widget only fills the target itself when it picked the source too. XLM, not USDC: before a wallet
+      // is connected the quote goes to a placeholder address, and 1Click refuses Stellar USDC to an address
+      // with no trustline for it, so the first quote on the page would be an error.
+      defaultTargetToken: { symbol: 'XLM', blockchain: 'stellar' },
 
       confidentialMode: 'user-choice',
 
