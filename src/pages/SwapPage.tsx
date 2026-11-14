@@ -244,9 +244,6 @@ export default function SwapPage() {
           <a href="/docs" onClick={linkTo('/docs')}>
             Docs
           </a>
-          <a href="/extension" onClick={linkTo('/extension')}>
-            Extension
-          </a>
           <a href="https://github.com/utkurock/lethea" target="_blank" rel="noreferrer">
             GitHub
           </a>
