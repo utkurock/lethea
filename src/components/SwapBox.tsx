@@ -11,7 +11,7 @@ import '@aurora-is-near/intents-swap-widget/styles.css';
 import i18n from 'i18next';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { DEPOSIT_CHAINS } from '../intents/chains';
-import { pct, type AppFee } from '../intents/fees';
+import { pct, swapFees, type AppFee } from '../intents/fees';
 import { SwapTracker, type Tracked } from './SwapTracker';
 import { useIntentsConfig } from '../intents/useIntentsConfig';
 import { WIDGET_THEME } from '../lib/theme';
@@ -54,7 +54,7 @@ export default function SwapBox({ onConnect, target: targetProp, recipient: reci
   );
   const feesKey = JSON.stringify(feesProp ?? []);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const fees = useMemo(() => (feesProp?.length ? feesProp : undefined), [feesKey]);
+  const fees = useMemo(() => swapFees(feesProp), [feesKey]);
   const evm = useEvmWallet();
   const xlm = useStellarWallet();
   const sol = useSolanaWallet();
@@ -113,7 +113,7 @@ export default function SwapBox({ onConnect, target: targetProp, recipient: reci
   const destChain = dest ? CHAINS.find((c) => c.id === dest.blockchain)?.label : undefined;
   // App fees are named in the quote details, on the widget's own fee line, not on the page. That line's
   // figure leaves them out (it reads the same with and without them), so the label says they come on top.
-  const feeLabel = fees ? `Fees (+${fees.map((f) => `${pct(f.fee)} to ${f.recipient}`).join(', ')})` : 'Fees';
+  const feeLabel = `Fees (+${fees.map((f) => `${pct(f.fee)} to ${f.recipient}`).join(', ')})`;
   useEffect(() => {
     i18n.addResourceBundle(
       'en',
@@ -140,7 +140,7 @@ export default function SwapBox({ onConnect, target: targetProp, recipient: reci
       ...(target ? { defaultTargetToken: target } : {}),
       // A payee's address is only valid on its own chain family, so the target can't move off it.
       ...(recipient ? { allowedTargetChainsList: recipient.chains } : {}),
-      ...(fees ? { appFees: fees } : {}),
+      appFees: fees,
     }),
     [config, allow, defaultSource, target, autoRecipient, recipient, fees],
   );

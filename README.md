@@ -16,7 +16,7 @@ The app is a static React site. It has no backend and stores no user data. Every
 
 ### Swap
 
-The swap box is Aurora's [Intents Swap Widget](https://github.com/aurora-is-near/intents-swap-widget) running in external wallet mode, with Lethea's own wallet picker around it. You choose a pair, read the quote, sign the deposit, and solvers compete to fill it. Quotes refresh every 15 seconds and slippage tolerance is 1%. Past swaps and their status show up in the widget's history view.
+The swap box is Aurora's [Intents Swap Widget](https://github.com/aurora-is-near/intents-swap-widget) running in external wallet mode, with Lethea's own wallet picker around it. You choose a pair, read the quote, sign the deposit, and solvers compete to fill it. Quotes refresh every 15 seconds and slippage tolerance is 1%. Lethea takes 0.1% of each swap, paid to `lethea.near` through NEAR Intents' `appFees` when the intent settles, and named on the fee line in the quote details. Past swaps and their status show up in the widget's history view.
 
 | Direction | Chains |
 | --- | --- |
@@ -62,7 +62,7 @@ The extension in [`extension/`](extension) reads posts as X renders them and add
 
 **Swap on cashtags.** A Swap button with the live price appears next to every cashtag that NEAR Intents lists, such as `$ETH`, `$ZEC` or `$PEPE`. Hovering it shows what $100 of BTC, ZEC or SOL buys right now, from dry 1Click quotes, and how long each route takes. Clicking it opens `lethea.xyz/buy/<chain>/<symbol>` in a small popup with the token already selected, and you can pay from any chain Lethea supports, Bitcoin, Zcash and XRP included. When a symbol is listed on several chains, the native asset wins. The button always buys the asset NEAR Intents lists, never an address written in the post.
 
-**A share for the post's author.** If the author of the post has a `.near` account in their X name, such as `Alice · alice.near`, 0.1% of a swap opened from that post goes to that account. It is paid through NEAR Intents' `appFees`, so the intent pays it when it settles and Lethea never holds it. The buy page first checks that the account exists, and names the fee on the fee line in the quote details. Writers who put a `.near` name on X earn from the trades their posts start.
+**A share for the post's author.** If the author of the post has a `.near` account in their X name, such as `Alice · alice.near`, 0.1% of a swap opened from that post goes to that account, on top of Lethea's 0.1%. It is paid through NEAR Intents' `appFees`, so the intent pays it when it settles and Lethea never holds it. The buy page first checks that the account exists, and names the fee on the fee line in the quote details. Writers who put a `.near` name on X earn from the trades their posts start.
 
 **Scam checks under posts.** These show up under any post that has a contract address or an outside link:
 
@@ -125,7 +125,7 @@ npm run dev
 | `VITE_INTENTS_API_KEY` | Yes | NEAR Intents key from [studio.aurora.dev](https://studio.aurora.dev) |
 | `VITE_ALCHEMY_API_KEY` | No | EVM token balances in the swap box |
 | `VITE_ENABLE_SPP` | No | `true` turns on Private Send. Keep it `false` on mainnet builds |
-| `VITE_FEE_ACCOUNT` | No | NEAR account that receives Lethea's 0.1% on swaps opened from X. Without it Lethea takes nothing |
+| `VITE_FEE_ACCOUNT` | No | NEAR account that receives Lethea's 0.1% of each swap. Defaults to `lethea.near` |
 
 `.env.example` also lists `VITE_REOWN_PROJECT_ID`. The current code does not read it.
 
