@@ -5,20 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Lethea for X</title>
     <link rel="icon" href="icons/icon-48.png" />
+    <link rel="stylesheet" href="brand.css" />
     <link rel="stylesheet" href="content.css" />
     <style>
-      :root { --bg: #0c0c0e; --card: #16171a; --line: rgb(255 255 255 / 0.08); --ink: #f5f5f6; --ink-2: #cfd1d6; --ink-3: #9ea1a8; --ink-4: #6f727a; --x-line: #2f3336; --x-muted: #71767b; --x-blue: #1d9bf0; }
-      * { box-sizing: border-box; }
+      :root { --card: var(--surface); --x-line: #2f3336; --x-muted: #71767b; --x-blue: #1d9bf0; }
       html { scroll-behavior: smooth; }
-      body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+      body { font: 15px/1.5 var(--font); }
       body::before { content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none; background-image: radial-gradient(rgb(201 206 214 / 0.16) 1px, transparent 1.3px); background-size: 9px 9px; -webkit-mask-image: radial-gradient(ellipse 70% 55% at 50% 0%, #000 0, transparent 75%); mask-image: radial-gradient(ellipse 70% 55% at 50% 0%, #000 0, transparent 75%); }
       a { color: inherit; }
       .wrap { max-width: 1040px; margin: 0 auto; padding: 0 24px; }
 
       /* Landing */
       .top { display: flex; align-items: center; gap: 10px; padding: 22px 0; }
-      .top svg { width: 22px; height: 26px; }
-      .top b { font-size: 17px; letter-spacing: 0.01em; }
       .top nav { margin-left: auto; display: flex; gap: 22px; color: var(--ink-3); font-size: 14px; }
       .top nav a { text-decoration: none; }
       .top nav a:hover { color: var(--ink); }
@@ -29,10 +27,9 @@
       .title span { display: block; color: var(--ink-3); }
       .lede { margin: 18px auto 0; max-width: 600px; color: var(--ink-3); font-size: 17px; }
       .cta { margin-top: 28px; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
-      .btn { display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 20px; border-radius: 999px; font-weight: 600; text-decoration: none; border: 1px solid var(--line); background: var(--card); }
-      .btn.primary { border-color: rgb(0 0 0 / 0.14); background: linear-gradient(180deg, #eef0f3, #c9ced6); color: #0c0c0e; box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.6), 0 1px 2px rgb(0 0 0 / 0.22); }
+      .cta .btn { height: 48px; padding: 0 24px; font-size: 16px; }
       .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; padding: 24px 0 8px; }
-      .feature { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 20px; }
+      .feature { background: var(--card); box-shadow: inset 0 0 0 1px var(--line); border-radius: 24px; padding: 24px; }
       .feature .k { font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-4); }
       .feature b { display: block; margin-top: 8px; font-size: 17px; }
       .feature p { margin: 6px 0 0; color: var(--ink-3); font-size: 14px; }
@@ -42,7 +39,7 @@
       .try p { margin: 8px auto 0; max-width: 560px; color: var(--ink-3); }
 
       /* The sample timeline: marked up the way X renders posts, so content.js reads it exactly as it reads x.com. */
-      main { max-width: 600px; margin: 0 auto 24px; background: #000; color: #e7e9ea; border: 1px solid var(--x-line); border-radius: 20px; overflow: hidden; box-shadow: 0 40px 120px rgb(0 0 0 / 0.6); }
+      main { max-width: 600px; margin: 0 auto 24px; background: #000; color: #e7e9ea; font: 15px/1.4 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; border: 1px solid var(--x-line); border-radius: 20px; overflow: hidden; box-shadow: 0 40px 120px rgb(0 0 0 / 0.6); }
       .bar-x { display: flex; align-items: center; gap: 8px; height: 44px; padding: 0 16px; border-bottom: 1px solid var(--x-line); color: var(--x-muted); font-size: 13px; }
       .bar-x i { width: 10px; height: 10px; border-radius: 50%; background: #3a3b41; }
       .bar-x span { margin-left: 10px; }
@@ -74,13 +71,20 @@
   <body>
     <div class="wrap">
       <div class="top">
-        <svg viewBox="0 0 52 60" aria-hidden="true"><path fill="#c9ced6" d="M4.16 23.84a21.84 21.84 0 0 1 43.68 0V54q-7.28 8-14.56 0-7.28 8-14.56 0-7.28 8-14.56 0Z" /><ellipse cx="17.7" cy="25.84" rx="4.2" ry="5.4" fill="#0c0c0e" /><ellipse cx="34.3" cy="25.84" rx="4.2" ry="5.4" fill="#0c0c0e" /></svg>
-        <b>Lethea for X</b>
-        <nav><a href="#try">Demo</a><a href="https://lethea.xyz" target="_blank" rel="noreferrer">lethea.xyz</a><a href="https://github.com/utkurock/lethea" target="_blank" rel="noreferrer">GitHub</a></nav>
+        <span class="logo">
+          <svg viewBox="0 0 52 60" aria-hidden="true">
+            <defs><radialGradient id="shade" cx="16.2" cy="16.2" r="45" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#f5f5f6" /><stop offset="1" stop-color="#8a8d94" /></radialGradient></defs>
+            <path fill="url(#shade)" d="M4.16 23.84a21.84 21.84 0 0 1 43.68 0V54q-7.28 8-14.56 0-7.28 8-14.56 0-7.28 8-14.56 0Z" />
+            <ellipse cx="17.7" cy="25.84" rx="4.2" ry="5.4" fill="#0c0c0e" /><ellipse cx="34.3" cy="25.84" rx="4.2" ry="5.4" fill="#0c0c0e" />
+            <path d="M30.56 34.66a4 4 0 0 1-7.12 0" fill="none" stroke="#0c0c0e" stroke-width="1.8" stroke-linecap="round" />
+          </svg>
+          Lethea for X
+        </span>
+        <nav><a href="#try">Demo</a><a href="https://lethea.xyz/extension" target="_blank" rel="noreferrer">lethea.xyz</a><a href="https://github.com/utkurock/lethea" target="_blank" rel="noreferrer">GitHub</a></nav>
       </div>
 
       <section class="hero">
-        <span class="eyebrow"><i></i>Installed and running</span>
+        <span class="eyebrow">Installed and running</span>
         <div class="title">See a coin on X. <span>Buy it right there.</span></div>
         <p class="lede">Lethea puts a Swap button on every cashtag, checks the contracts and links in posts for scams, and adds a Pay button to profiles. Swaps settle across chains through NEAR Intents, privately if you want.</p>
         <div class="cta">
