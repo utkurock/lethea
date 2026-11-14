@@ -84,13 +84,13 @@ If you press Swap on a post that has a red flag, the buy page repeats the warnin
 1. Download the `lethea-for-x` zip from the [latest release](https://github.com/utkurock/lethea/releases/latest) and unzip it. If you cloned the repo, use the `extension` folder instead.
 2. Open `chrome://extensions` and turn on Developer mode.
 3. Click **Load unpacked** and choose the unzipped `lethea-for-x` folder (or `extension`).
-4. Open x.com. Clicking the extension's toolbar icon opens a demo page with a sample profile and posts, so you can try it without an X account.
+4. Open x.com. The extension's toolbar icon opens a popup with what Lethea has done in this browser: tokens spotted, posts checked, scams flagged, swaps and payments opened, and the latest activity. Its **Open the demo** button opens a page with a sample profile and posts, so you can try it without an X account.
 
 The Swap and Pay buttons open `https://lethea.xyz`. To point them at a local `npm run dev`, change `LETHEA_URL` at the top of [`extension/background.js`](extension/background.js) to `http://localhost:5173`.
 
 ### What it sends where
 
-The extension has no server and keeps nothing on disk. It fetches the NEAR Intents token list and, when you hover a Swap button, dry quotes from 1Click. It sends contract addresses and link domains from posts you scroll past to GoPlus, and opens Lethea with the token, the post, the author's `.near` account or the payee in the URL. It reads both of X's current page builds: the older one with `data-testid` attributes and the late-2026 one without them.
+The extension has no server. The only thing it stores is the popup's activity counts, in the browser's local extension storage, and they never leave the browser; **Reset** in the popup clears them. It fetches the NEAR Intents token list and, when you hover a Swap button, dry quotes from 1Click. It sends contract addresses and link domains from posts you scroll past to GoPlus, and opens Lethea with the token, the post, the author's `.near` account or the payee in the URL. It reads both of X's current page builds: the older one with `data-testid` attributes and the late-2026 one without them.
 
 ### Limits
 
@@ -165,7 +165,7 @@ src/
 public/
   fonts/                Jeko
   spp/                  vendored Stellar Private Payments SDK and testnet deployments.json
-extension/              Lethea for X: manifest, background.js (network), content.js (page), demo.html
+extension/              Lethea for X: manifest, background.js (network, counts), content.js (page), popup, demo.html
 brand/                  logo source images and make-logo.py
 docs/media/             README screenshots and the ghost GIF
 ```
@@ -189,7 +189,7 @@ Lethea itself existed before the hackathon. The swap site, wallets, token pages 
 
 New in the hackathon window:
 
-- The Lethea for X extension: Swap buttons with live quotes on cashtags, the scam checks, and Pay buttons on profiles
+- The Lethea for X extension: Swap buttons with live quotes on cashtags, the scam checks, Pay buttons on profiles, a toolbar popup with local activity counts, and a demo page
 - Fee sharing with post authors who have a `.near` name, through NEAR Intents `appFees`
 - `/buy/:chain/:symbol` and `/pay/:handle` on the site, sized for the extension's popup
 - A fixed-recipient mode and app fees for the swap box, used by the pay and buy pages

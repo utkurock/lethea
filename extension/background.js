@@ -318,6 +318,10 @@ function openBuy({ chain, symbol, post, creator, warn = [] }) {
   if (post) url.searchParams.set('post', post);
   if (creator) url.searchParams.set('creator', creator);
   for (const w of warn.slice(0, 3)) url.searchParams.append('warn', w.slice(0, 160));
+  void track((s) => {
+    s.swaps++;
+    recent(s, 'swap', `Opened a swap for ${symbol}`);
+  });
   return openPopup(url);
 }
 
@@ -325,10 +329,72 @@ function openBuy({ chain, symbol, post, creator, warn = [] }) {
 function openPay({ handle, to }) {
   const url = new URL(`/pay/${encodeURIComponent(handle)}`, LETHEA_URL);
   url.searchParams.set('to', to);
+  void track((s) => {
+    s.pays++;
+    recent(s, 'pay', `Opened a payment to @${handle}`);
+  });
   return openPopup(url);
 }
 
-const HANDLERS = { lookup, quotes, scanToken: ({ address }) => scanToken(address), scanSites, openBuy, openPay };
+// ---------------------------------------------------------------------------------------------------------
+// Activity for the toolbar popup. Counts only, kept in this browser's local storage and sent nowhere.
+// X draws a post again as you scroll back to it, so posts and flags are counted once by their key.
+
+const STATS = 'stats';
+const KEEP = 1000; // keys remembered for de-duplication
+const blank = () => ({ since: Date.now(), tokens: [], posts: 0, postKeys: [], flags: 0, flagKeys: [], swaps: 0, pays: 0, recent: [] });
+let statsWrite = Promise.resolve();
+
+/** Applies `change` to the stored stats. Writes run one at a time so concurrent posts don't drop counts. */
+function track(change) {
+  statsWrite = statsWrite
+    .then(async () => {
+      const { [STATS]: s = blank() } = await chrome.storage.local.get(STATS);
+      change(s);
+      await chrome.storage.local.set({ [STATS]: s });
+    })
+    .catch(() => {});
+  return statsWrite;
+}
+
+function recent(s, kind, text) {
+  s.recent = [{ kind, text: text.slice(0, 120), at: Date.now() }, ...s.recent].slice(0, 8);
+}
+
+/** First time a key is seen: remember it and return true. */
+function fresh(keys, key) {
+  if (keys.includes(key)) return false;
+  keys.push(key);
+  if (keys.length > KEEP) keys.splice(0, keys.length - KEEP);
+  return true;
+}
+
+const str = (v, max) => (typeof v === 'string' ? v.slice(0, max) : '');
+
+/** A post the content script marked up: the listed tokens it holds. */
+function seen({ post, symbols }) {
+  const key = str(post, 300);
+  const syms = (Array.isArray(symbols) ? symbols : []).map((x) => str(x, 20)).filter(Boolean);
+  return track((s) => {
+    if (key && !fresh(s.postKeys, key)) return;
+    s.posts++;
+    for (const sym of syms) if (!s.tokens.includes(sym)) s.tokens.push(sym);
+    if (s.tokens.length > 500) s.tokens.splice(0, s.tokens.length - 500);
+  });
+}
+
+/** A danger or caution chip the content script showed. */
+function flagged({ post, risk, text }) {
+  if (risk !== 'danger' && risk !== 'caution') return;
+  const note = str(text, 120);
+  return track((s) => {
+    if (!fresh(s.flagKeys, `${str(post, 300)}|${note}`)) return;
+    s.flags++;
+    recent(s, risk, note);
+  });
+}
+
+const HANDLERS = { lookup, quotes, scanToken: ({ address }) => scanToken(address), scanSites, openBuy, openPay, seen, flagged };
 
 chrome.runtime.onMessage.addListener((msg, _sender, reply) => {
   const handler = Object.hasOwn(HANDLERS, msg?.type) ? HANDLERS[msg.type] : undefined;
@@ -338,5 +404,3 @@ chrome.runtime.onMessage.addListener((msg, _sender, reply) => {
     .catch((err) => reply({ ok: false, error: String(err?.message ?? err) }));
   return true; // reply comes later
 });
-
-chrome.action.onClicked.addListener(() => chrome.tabs.create({ url: chrome.runtime.getURL('demo.html') }));

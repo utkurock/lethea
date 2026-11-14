@@ -225,6 +225,14 @@
     const show = () => !row.isConnected && textEl.after(row);
     const from = { post, creator: creatorOf(textEl), warnings: () => [...row.querySelectorAll('[data-warn]')].map((c) => c.dataset.warn) };
 
+    // For the toolbar popup's counts: the post, the tokens it lists, and every warning shown under it.
+    const flag = (risk, text) => void send({ type: 'flagged', post, risk, text });
+    const listed = [
+      ...tagLinks.map((a) => found?.swaps[a.textContent.trim().slice(1).toUpperCase()]?.symbol),
+      ...(found?.addresses ?? []).map((x) => x.listing?.symbol),
+    ].filter(Boolean);
+    void send({ type: 'seen', post, symbols: [...new Set(listed)] });
+
     // A Swap button right after each cashtag NEAR Intents lists.
     for (const a of tagLinks) {
       const listing = found?.swaps[a.textContent.trim().slice(1).toUpperCase()];
@@ -235,7 +243,9 @@
       if (listing) {
         row.append(chip('ok', `${short(address)} is ${listing.symbol} on NEAR Intents`, address), swapButton(listing, `Swap ${listing.symbol}`, from));
       } else if (impostorOf) {
-        row.append(chip('danger', `${short(address)} is not the $${impostorOf} NEAR Intents lists`, `${address}\nThe post names $${impostorOf} but gives a different contract. Swap buttons buy the listed one.`, `impostor:${address}:${impostorOf}`));
+        const note = `${short(address)} is not the $${impostorOf} NEAR Intents lists`;
+        row.append(chip('danger', note, `${address}\nThe post names $${impostorOf} but gives a different contract. Swap buttons buy the listed one.`, `impostor:${address}:${impostorOf}`));
+        flag('danger', note);
       } else {
         const pending = chip('wait', `Checking ${short(address)}…`, address);
         row.append(pending);
@@ -249,6 +259,7 @@
                 ? `${name}: no red flags`
                 : `${name}: ${v.flags.slice(0, 2).join(' · ')}${v.flags.length > 2 ? ` +${v.flags.length - 2}` : ''}`;
           pending.replaceWith(chip(v.risk, text, `${address}${v.chain ? ` on ${v.chain}` : ''}\n${v.flags?.join('\n') ?? ''}\nSource: GoPlus Security`, `token:${address}`));
+          flag(v.risk, text);
         });
       }
       show();
@@ -258,6 +269,7 @@
       const sites = await send({ type: 'scanSites', hosts, text });
       for (const s of sites ?? []) {
         row.append(chip(s.risk, s.note, s.host, s.warn));
+        flag(s.risk, s.note);
         show();
       }
     }
