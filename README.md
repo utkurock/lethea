@@ -81,6 +81,8 @@ If you press Swap on a post that has a red flag, the buy page repeats the warnin
 
 ### Install
 
+[lethea.xyz/extension](https://lethea.xyz/extension) has a download button and the same steps.
+
 1. Download the `lethea-for-x` zip from the [latest release](https://github.com/utkurock/lethea/releases/latest) and unzip it. If you cloned the repo, use the `extension` folder instead.
 2. Open `chrome://extensions` and turn on Developer mode.
 3. Click **Load unpacked** and choose the unzipped `lethea-for-x` folder (or `extension`).

@@ -1,0 +1,138 @@
+/* Lethea for X page. The site's tokens and Jeko for the page; the X mock-ups use X's own system font and
+   colours, and the extension's stylesheet (content.css) for everything Lethea draws inside them. */
+
+.xp { width: 100%; max-width: 1180px; margin: 0 auto; padding: clamp(24px, 6vh, 72px) 32px clamp(48px, 8vh, 96px); }
+.xp a { cursor: pointer; }
+.xp-k { color: var(--ink-4); font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
+.xp-fine { display: block; color: var(--ink-4); font-size: 13px; line-height: 1.5; }
+.xp-fine a, .xp-steps a, .xp-link { color: var(--ink); text-decoration: underline; text-decoration-color: var(--ink-4); text-underline-offset: 3px; }
+
+/* Hero */
+.xp-hero { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 520px); gap: clamp(32px, 5vw, 72px); align-items: center; }
+.xp-eyebrow {
+  display: inline-flex; align-items: center; gap: 8px; height: 30px; padding: 0 14px; border-radius: 999px;
+  background: var(--surface); box-shadow: inset 0 0 0 1px var(--line); color: var(--ink-3); font-size: 13px; font-weight: 500;
+}
+.xp h1 { margin: 22px 0 0; font-size: clamp(44px, 6vw, 76px); line-height: 0.98; font-weight: 700; letter-spacing: -0.035em; }
+.xp h1 span { display: block; margin-top: 16px; color: var(--ink-3); font-size: clamp(22px, 2.4vw, 30px); line-height: 1.15; font-weight: 500; letter-spacing: -0.02em; }
+.xp-copyhead > p { max-width: 46ch; margin: 22px 0 0; color: var(--ink-2); font-size: 17px; line-height: 1.55; }
+.xp-cta { display: flex; flex-wrap: wrap; gap: 10px; margin: 30px 0 14px; }
+.xp-btn {
+  display: inline-flex; align-items: center; height: 50px; padding: 0 26px; border-radius: 999px;
+  background: var(--surface-3); color: var(--ink); font-size: 16px; font-weight: 500; transition: filter 0.15s, background 0.15s;
+}
+.xp-btn:hover { background: #34353b; }
+.xp-btn.primary { background: var(--accent); color: var(--on-accent); }
+.xp-btn.primary:hover { filter: brightness(1.06); }
+
+/* Hero demo: a browser window on two posts, looping through what the extension does to them. */
+.xp-stage { position: relative; width: 100%; max-width: 520px; justify-self: end; }
+.xp-window {
+  overflow: hidden; border-radius: 20px; background: #000; border: 1px solid #2f3336;
+  box-shadow: 0 40px 120px rgb(0 0 0 / 0.65), 0 0 0 8px rgb(255 255 255 / 0.02);
+  color: #e7e9ea; font: 15px/20px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+.xp-bar { display: flex; align-items: center; gap: 7px; height: 40px; padding: 0 16px; border-bottom: 1px solid #2f3336; color: #71767b; font-size: 12px; }
+.xp-bar i { width: 10px; height: 10px; border-radius: 50%; background: #2f3336; }
+.xp-bar span { margin-left: 10px; }
+.xp-post { display: grid; grid-template-columns: 40px 1fr; gap: 12px; padding: 14px 16px; }
+.xp-post + .xp-post { border-top: 1px solid #2f3336; }
+.xp-av { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; background: #16171a; }
+.xp-av-uni { display: grid; place-items: center; background: #fce7f3; font-size: 20px; }
+.xp-who { display: flex; align-items: center; gap: 4px; color: #71767b; white-space: nowrap; overflow: hidden; }
+.xp-who b { color: #e7e9ea; }
+.xp-badge { width: 16px; height: 16px; flex: none; }
+.xp-text { margin: 2px 0 0; }
+.xp-text a, .xp-tag { color: #1d9bf0; }
+.xp-tag { font: 15px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+
+/* Things the extension adds pop in. Inline pills grow from nothing so the text doesn't hold a gap for them. */
+.xp-pop { transition: opacity 0.25s ease, transform 0.4s cubic-bezier(0.2, 1.5, 0.4, 1), max-width 0.4s ease; }
+.xp-pop:not(.on) { opacity: 0; transform: scale(0.6); }
+.lethea-swap.xp-pop { max-width: 140px; overflow: hidden; }
+.lethea-swap.xp-pop:not(.on) { max-width: 0; padding: 0; margin: 0; border-width: 0; }
+.xp-row { transition: opacity 0.3s ease, transform 0.3s ease; }
+.xp-row:not(.on) { opacity: 0; transform: translateY(6px); }
+.xp-chip-icon { width: 13px; text-align: center; font-weight: 800; }
+
+.xp-quote.lethea-quote {
+  position: absolute; left: 250px; top: 104px; z-index: 2; animation: none;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+.xp-quote:not(.on) { opacity: 0; transform: translateY(6px); }
+.xp-cursor {
+  position: absolute; z-index: 3; width: 18px; height: 26px; left: 470px; top: 300px; opacity: 0;
+  transition: left 0.9s cubic-bezier(0.4, 0, 0.2, 1), top 0.9s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s;
+  filter: drop-shadow(0 2px 4px rgb(0 0 0 / 0.5));
+}
+.xp-cursor.on { left: 372px; top: 88px; opacity: 1; }
+
+/* Feature cards, each with a live sample drawn by the extension's own styles. */
+.xp-features { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: clamp(64px, 10vh, 120px); }
+.xp-card {
+  display: flex; flex-direction: column; padding: 28px; border-radius: 24px;
+  background: rgb(22 23 26 / 0.86); box-shadow: inset 0 0 0 1px var(--line); backdrop-filter: blur(6px);
+}
+.xp-card h2 { margin: 10px 0 0; font-size: 22px; font-weight: 600; letter-spacing: -0.01em; }
+.xp-card p { margin: 10px 0 0; color: var(--ink-3); font-size: 15px; line-height: 1.55; }
+.xp-mini {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: auto; padding: 18px; min-height: 120px;
+  border-radius: 16px; background: #000; box-shadow: inset 0 0 0 1px #2f3336;
+}
+.xp-card p + .xp-mini { margin-top: 22px; }
+.xp-stack { flex-direction: column; align-items: flex-start; }
+.xp-mini .lethea-swap { margin: 0; }
+.xp-pair { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.xp-pulse { animation: xp-pulse 2.4s ease-out infinite; }
+@keyframes xp-pulse {
+  0% { box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.6), 0 0 0 0 rgb(201 206 214 / 0.45); }
+  70%, 100% { box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.6), 0 0 0 14px rgb(201 206 214 / 0); }
+}
+
+/* Spot, check, settle */
+.xp-flow { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: 16px; }
+.xp-flow > div { padding: 24px 28px; border-top: 1px solid var(--line); }
+.xp-flow b { color: var(--ink-4); font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.xp-flow h3 { margin: 8px 0 0; font-size: 20px; font-weight: 600; }
+.xp-flow p { margin: 8px 0 0; color: var(--ink-3); font-size: 15px; line-height: 1.55; }
+
+/* Install */
+.xp-install {
+  display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 16px; margin-top: clamp(48px, 8vh, 96px);
+  scroll-margin-top: 24px;
+}
+.xp-install > div { padding: 32px; border-radius: 24px; background: rgb(22 23 26 / 0.86); box-shadow: inset 0 0 0 1px var(--line); }
+.xp-install h2 { margin: 10px 0 0; font-size: clamp(26px, 3vw, 34px); font-weight: 700; letter-spacing: -0.02em; }
+.xp-steps { list-style: none; counter-reset: step; margin: 22px 0 18px; padding: 0; display: grid; gap: 14px; }
+.xp-steps li { counter-increment: step; position: relative; padding-left: 40px; color: var(--ink-2); font-size: 16px; line-height: 1.6; }
+.xp-steps li::before {
+  content: counter(step); position: absolute; left: 0; top: 0; width: 26px; height: 26px; border-radius: 50%;
+  display: grid; place-items: center; background: var(--surface-3); color: var(--ink); font-size: 13px; font-weight: 600;
+}
+.xp-steps b { color: var(--ink); font-weight: 500; }
+.xp-steps code, .xp-copy code { font: 500 14px ui-monospace, SFMono-Regular, Menlo, monospace; }
+.xp-steps > li > code { padding: 2px 8px; border-radius: 8px; background: var(--surface-3); }
+.xp-copy {
+  display: inline-flex; align-items: center; gap: 8px; height: 30px; padding: 0 6px 0 10px; margin: 0 2px; vertical-align: 1px;
+  border: 0; border-radius: 9px; background: var(--surface-3); cursor: pointer;
+}
+.xp-copy span { padding: 2px 8px; border-radius: 6px; background: var(--surface-2); color: var(--ink-3); font-size: 12px; }
+.xp-copy:hover span { color: var(--ink); }
+.xp-privacy ul { margin: 18px 0 22px; padding: 0; list-style: none; display: grid; gap: 12px; }
+.xp-privacy li { position: relative; padding-left: 20px; color: var(--ink-2); font-size: 15px; line-height: 1.5; }
+.xp-privacy li::before { content: ''; position: absolute; left: 0; top: 8px; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
+
+@media (max-width: 960px) {
+  .xp-hero, .xp-install { grid-template-columns: minmax(0, 1fr); }
+  .xp-stage { justify-self: center; }
+  .xp-features, .xp-flow { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 600px) {
+  .xp { padding-left: 16px; padding-right: 16px; }
+  .xp-stage { zoom: 0.64; max-width: 520px; width: 520px; }
+  .xp-install > div, .xp-card { padding: 22px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .xp-pop, .xp-row, .xp-quote, .xp-cursor { transition: none; }
+  .xp-pulse { animation: none; }
+}

@@ -21,6 +21,7 @@ import { useStellarWallet } from '../wallets/stellar';
 // Pages that aren't the landing one load when first visited.
 const PrivatePage = lazyChunk(() => import('./PrivatePage').then((m) => ({ default: m.PrivatePage })));
 const DocsPage = lazyChunk(() => import('./DocsPage').then((m) => ({ default: m.DocsPage })));
+const ExtensionPage = lazyChunk(() => import('./ExtensionPage').then((m) => ({ default: m.ExtensionPage })));
 // Opened from the X extension; the pay page also brings ENS name handling, which no other page needs.
 const BuyPage = lazyChunk(() => import('./BuyPage').then((m) => ({ default: m.BuyPage })));
 const PayPage = lazyChunk(() => import('./PayPage').then((m) => ({ default: m.PayPage })));
@@ -73,10 +74,11 @@ export default function SwapPage() {
   const path = usePath();
   const isPrivate = FLAGS.spp && path === '/private';
   const isDocs = path === '/docs';
+  const isExt = path === '/extension';
   const token = path.startsWith('/token/') ? findToken(decode(path.slice(7))) : undefined;
   const buy = path.match(/^\/buy\/([^/]+)\/([^/]+)$/)?.slice(1).map(decode);
   const pay = path.match(/^\/pay\/([^/]+)$/)?.[1];
-  const isSwap = !token && !buy && !pay && !isPrivate && !isDocs;
+  const isSwap = !token && !buy && !pay && !isPrivate && !isDocs && !isExt;
 
   // Phone menu: closes on navigation and on Escape.
   const [menuOpen, setMenuOpen] = useState(false);
@@ -113,6 +115,9 @@ export default function SwapPage() {
               Private Send <em className="badge">Testnet</em>
             </span>
           )}
+          <a className={isExt ? 'active' : ''} href="/extension" onClick={linkTo('/extension')}>
+            Lethea for X
+          </a>
         </nav>
         <div className="nav-right">
           {missingKey && (
@@ -165,6 +170,9 @@ export default function SwapPage() {
                 Private Send <em className="badge">Testnet</em>
               </span>
             )}
+            <a className={isExt ? 'active' : ''} href="/extension" onClick={linkTo('/extension')}>
+              Lethea for X
+            </a>
             <a className={isDocs ? 'active' : ''} href="/docs" onClick={linkTo('/docs')}>
               Docs
             </a>
@@ -180,6 +188,12 @@ export default function SwapPage() {
         <Fence message="This page couldn't load." className="page-crash">
           <Suspense fallback={null}>
             <DocsPage />
+          </Suspense>
+        </Fence>
+      ) : isExt ? (
+        <Fence message="This page couldn't load." className="page-crash">
+          <Suspense fallback={null}>
+            <ExtensionPage />
           </Suspense>
         </Fence>
       ) : isPrivate ? (
@@ -229,6 +243,9 @@ export default function SwapPage() {
           © 2026 Lethea
           <a href="/docs" onClick={linkTo('/docs')}>
             Docs
+          </a>
+          <a href="/extension" onClick={linkTo('/extension')}>
+            Extension
           </a>
           <a href="https://github.com/utkurock/lethea" target="_blank" rel="noreferrer">
             GitHub
