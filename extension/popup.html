@@ -9,8 +9,11 @@
       header { display: flex; align-items: center; gap: 8px; padding: 16px 16px 12px; }
       header .logo { font-size: 16px; }
       header small { color: var(--ink-4); font-size: 11px; font-weight: 500; margin-left: 2px; }
-      .status { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; border-radius: 999px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--line); color: var(--ink-3); font-size: 11px; font-weight: 500; }
-      .status i { width: 6px; height: 6px; border-radius: 50%; background: var(--up); box-shadow: 0 0 0 3px rgb(34 197 94 / 0.16); }
+      .status { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; border: 0; border-radius: 999px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--line); color: var(--ink-3); font: 500 11px var(--font); cursor: pointer; transition: background 0.15s, color 0.15s; }
+      .status:hover { background: var(--surface-2); color: var(--ink-2); }
+      .status i { width: 6px; height: 6px; border-radius: 50%; background: var(--up); box-shadow: 0 0 0 3px rgb(34 197 94 / 0.16); transition: background 0.15s, box-shadow 0.15s; }
+      .status[aria-pressed='true'] i { background: var(--ink-4); box-shadow: 0 0 0 3px rgb(111 114 122 / 0.18); }
+      body.paused main, body.paused nav { opacity: 0.45; }
 
       /* Tabs, the way a wallet popup splits its home and its activity. */
       nav { display: grid; grid-template-columns: 1fr 1fr; margin: 0 16px; border-bottom: 1px solid var(--line); }
@@ -62,7 +65,7 @@
         </svg>
         Lethea for X<small id="version"></small>
       </span>
-      <span class="status"><i></i>Active on x.com</span>
+      <button class="status" id="toggle" type="button" aria-pressed="false" title="Pause Lethea on x.com"><i></i><span id="toggleText">Active on x.com</span></button>
     </header>
 
     <nav role="tablist">

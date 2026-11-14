@@ -86,7 +86,7 @@ If you press Swap on a post that has a red flag, the buy page repeats the warnin
 1. Download the `lethea-for-x` zip from the [latest release](https://github.com/utkurock/lethea/releases/latest) and unzip it. If you cloned the repo, use the `extension` folder instead.
 2. Open `chrome://extensions` and turn on Developer mode.
 3. Click **Load unpacked** and choose the unzipped `lethea-for-x` folder (or `extension`).
-4. A demo page with a sample profile and posts opens once, right after install, so you can try it without an X account. Then open x.com. The toolbar icon opens a popup with two tabs: **Overview** (tokens spotted, posts checked, scams flagged, swaps and payments opened) and **Activity** (the latest flags, swaps and payments).
+4. A demo page with a sample profile and posts opens once, right after install, so you can try it without an X account. Then open x.com. The toolbar icon opens a popup with two tabs: **Overview** (tokens spotted, posts checked, scams flagged, swaps and payments opened) and **Activity** (the latest flags, swaps and payments). Clicking its **Active on x.com** pill pauses Lethea: the buttons and flags come off the page until you click it again.
 
 The Swap and Pay buttons open `https://lethea.xyz`. To point them at a local `npm run dev`, change `LETHEA_URL` at the top of [`extension/background.js`](extension/background.js) to `http://localhost:5173`.
 

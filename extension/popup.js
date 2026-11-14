@@ -78,8 +78,26 @@ function render(s) {
   $('activity').replaceChildren(list);
 }
 
-chrome.storage.local.get('stats').then(({ stats }) => render(stats));
+// The status pill is the on/off switch. The content script listens for `paused` and clears or redraws the page.
+function showPaused(paused) {
+  $('toggle').setAttribute('aria-pressed', String(!!paused));
+  $('toggle').title = paused ? 'Turn Lethea back on' : 'Pause Lethea on x.com';
+  $('toggleText').textContent = paused ? 'Paused' : 'Active on x.com';
+  document.body.classList.toggle('paused', !!paused);
+}
+$('toggle').addEventListener('click', () => {
+  const paused = $('toggle').getAttribute('aria-pressed') !== 'true';
+  void chrome.storage.local.set({ paused });
+  showPaused(paused);
+});
+
+chrome.storage.local.get(['stats', 'paused']).then(({ stats, paused }) => {
+  render(stats);
+  showPaused(paused);
+});
 chrome.storage.onChanged.addListener((changes, area) => {
-  if (area === 'local' && changes.stats) render(changes.stats.newValue);
+  if (area !== 'local') return;
+  if (changes.stats) render(changes.stats.newValue);
+  if (changes.paused) showPaused(changes.paused.newValue);
 });
 $('reset').addEventListener('click', () => chrome.storage.local.remove('stats').then(() => render(undefined)));

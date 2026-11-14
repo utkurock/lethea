@@ -219,6 +219,7 @@
     if (!cashtags.length && !addresses.length && !hosts.length) return;
 
     const found = (cashtags.length || addresses.length) && (await send({ type: 'lookup', cashtags, addresses }));
+    if (paused) return; // paused while the lookup was out
 
     // Checks go in a bar under the text, added once there is something to show.
     const row = bar();
@@ -267,6 +268,7 @@
 
     if (hosts.length) {
       const sites = await send({ type: 'scanSites', hosts, text });
+      if (paused) return;
       for (const s of sites ?? []) {
         row.append(chip(s.risk, s.note, s.host, s.warn));
         flag(s.risk, s.note);
@@ -349,10 +351,21 @@
   }
 
   // X renders posts as you scroll and recycles their nodes; each text element is read once.
-  const seen = new WeakSet();
+  // Paused from the toolbar popup: nothing is read or drawn, and what was drawn comes off. Resuming reads the
+  // page again from scratch.
+  let paused = false;
+  let seen = new WeakSet();
   let queued = false;
+  function setPaused(value) {
+    paused = !!value;
+    if (paused) {
+      document.querySelectorAll('.lethea-swap, .lethea-bar, .lethea-quote').forEach((n) => n.remove());
+      seen = new WeakSet();
+    } else scan();
+  }
   function scan() {
     queued = false;
+    if (paused) return;
     scanProfile();
     for (const textEl of document.querySelectorAll(TEXT)) {
       if (seen.has(textEl)) continue;
@@ -367,5 +380,13 @@
       requestAnimationFrame(scan);
     }
   }).observe(document.body, { childList: true, subtree: true });
-  scan();
+
+  try {
+    chrome.storage.local.get('paused').then(({ paused: p }) => setPaused(p), scan);
+    chrome.storage.onChanged.addListener((changes, area) => {
+      if (area === 'local' && changes.paused) setPaused(changes.paused.newValue);
+    });
+  } catch {
+    scan(); // the extension was reloaded under this page; storage is gone with it
+  }
 })();
