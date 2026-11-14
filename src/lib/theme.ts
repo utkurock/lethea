@@ -5,7 +5,7 @@ export const ACCENT = '#c9ced6';
 export const SURFACE = '#16171a';
 
 /** Dither dot colour as [r, g, b, alpha]. */
-export const DOT: [number, number, number, number] = [201, 206, 214, 64];
+export const DOT: [number, number, number, number] = [201, 206, 214, 51];
 
 export const WIDGET_THEME: Theme = {
   colorScheme: 'dark',
